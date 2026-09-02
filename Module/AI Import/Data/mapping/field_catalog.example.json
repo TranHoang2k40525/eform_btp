@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "form_code": "EXAMPLE_ONLY",
+  "fields": [
+    {"field_id": "sequence", "label": "STT", "aliases": ["Số thứ tự"], "data_type": "integer", "required": false},
+    {"field_id": "organization_name", "label": "Tên đơn vị", "aliases": ["Tên cơ quan", "Đơn vị báo cáo"], "data_type": "string", "required": true},
+    {"field_id": "report_year", "label": "Năm báo cáo", "aliases": ["Năm", "Kỳ báo cáo"], "data_type": "integer", "required": true},
+    {"field_id": "total", "label": "Tổng số", "aliases": ["Số lượng", "Cộng"], "data_type": "number", "required": true},
+    {"field_id": "note", "label": "Ghi chú", "aliases": ["Diễn giải"], "data_type": "string", "required": false}
+  ]
+}
+
