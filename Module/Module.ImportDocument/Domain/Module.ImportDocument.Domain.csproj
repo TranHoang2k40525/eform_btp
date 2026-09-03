@@ -7,7 +7,6 @@
     <AssemblyName>Module.ImportDocument.Domain</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ImportField.cs" />
-    <Compile Include="ImportResponse.cs" />
+    <Compile Include="Entities\*.cs" />
   </ItemGroup>
 </Project>

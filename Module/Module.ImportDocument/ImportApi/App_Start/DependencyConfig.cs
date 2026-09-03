@@ -25,7 +25,7 @@ namespace EForm.ImportDocument.ImportApi.App_Start
         }
     }
 
-    public sealed class ImportMappingProfile : Profile
+    public class ImportMappingProfile : Profile
     {
         public ImportMappingProfile() { }
     }

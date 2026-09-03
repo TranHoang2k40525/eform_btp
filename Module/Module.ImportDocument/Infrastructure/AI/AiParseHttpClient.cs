@@ -11,7 +11,7 @@ using EForm.ImportDocument.Domain;
 
 namespace EForm.ImportDocument.Infrastructure
 {
-    public sealed class AiParseHttpClient : IImportAiClient
+    public class AiParseHttpClient : IImportAiClient
     {
         private readonly HttpClient _http;
         public AiParseHttpClient(HttpClient http, Uri baseAddress)
@@ -45,7 +45,7 @@ namespace EForm.ImportDocument.Infrastructure
         }
 
         [DataContract]
-        private sealed class ParseRequest
+        private class ParseRequest
         {
             [DataMember(Name = "path")] public string Path { get; set; }
             [DataMember(Name = "target_schema_json")] public string TargetSchemaJson { get; set; }

@@ -6,7 +6,7 @@ using EForm.ImportDocument.Domain;
 
 namespace EForm.ImportDocument.Application
 {
-    public sealed class StoredWorkbook
+    public class StoredWorkbook
     {
         public string FullPath { get; set; }
         public string OriginalName { get; set; }
@@ -14,7 +14,7 @@ namespace EForm.ImportDocument.Application
         public long Size { get; set; }
     }
 
-    public sealed class ImportPermissionResult
+    public class ImportPermissionResult
     {
         public bool Allowed { get; set; }
         public bool Locked { get; set; }
@@ -37,7 +37,7 @@ namespace EForm.ImportDocument.Application
         Task<FlatImportResult> ParseAsync(string fullPath, string targetSchemaJson, CancellationToken cancellationToken);
     }
 
-    public sealed class ImportPipelineService
+    public class ImportPipelineService
     {
         private readonly IImportPermission _permission;
         private readonly IWorkbookStorage _storage;
@@ -76,12 +76,12 @@ namespace EForm.ImportDocument.Application
         }
     }
 
-    public sealed class ImportRequestException : Exception
+    public class ImportRequestException : Exception
     {
         public ImportRequestException(string message) : base(message) { }
     }
 
-    public sealed class ImportPermissionException : Exception
+    public class ImportPermissionException : Exception
     {
         public ImportPermissionException(string message) : base(message) { }
     }

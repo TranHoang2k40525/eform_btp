@@ -10,7 +10,7 @@ namespace EForm.ImportDocument.Infrastructure
         bool IsDocumentLocked(long documentId);
     }
 
-    public sealed class EFormImportPermission : IImportPermission
+    public class EFormImportPermission : IImportPermission
     {
         private readonly IEFormImportPermissionPort _port;
         public EFormImportPermission(IEFormImportPermissionPort port) { _port = port; }

@@ -9,7 +9,7 @@ using EForm.ImportDocument.Application;
 
 namespace EForm.ImportDocument.Infrastructure
 {
-    public sealed class SecureWorkbookStorage : IWorkbookStorage
+    public class SecureWorkbookStorage : IWorkbookStorage
     {
         private readonly string _root;
         private readonly long _maxBytes;

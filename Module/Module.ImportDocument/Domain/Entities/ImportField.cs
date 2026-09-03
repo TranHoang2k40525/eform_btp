@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace EForm.ImportDocument.Domain
 {
-    public sealed class ImportTargetField
+    public class ImportTargetField
     {
         public string FieldId { get; set; }
         public string Label { get; set; }
@@ -12,7 +12,7 @@ namespace EForm.ImportDocument.Domain
         public string Description { get; set; }
     }
 
-    public sealed class ImportRequestContext
+    public class ImportRequestContext
     {
         public long DocumentId { get; set; }
         public long UserId { get; set; }

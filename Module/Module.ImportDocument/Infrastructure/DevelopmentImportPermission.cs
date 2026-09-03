@@ -5,7 +5,7 @@ using EForm.ImportDocument.Application;
 namespace EForm.ImportDocument.Infrastructure
 {
     // Chỉ dùng để chạy local; production phải thay bằng EFormImportPermission.
-    public sealed class DevelopmentImportPermission : IImportPermission
+    public class DevelopmentImportPermission : IImportPermission
     {
         public Task<ImportPermissionResult> CheckAsync(long documentId, long userId, long? organizationId, CancellationToken cancellationToken)
         {

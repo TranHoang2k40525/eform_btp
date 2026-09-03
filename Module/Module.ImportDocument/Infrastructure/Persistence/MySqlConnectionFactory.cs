@@ -4,7 +4,7 @@ using MySql.Data.MySqlClient;
 
 namespace EForm.ImportDocument.Infrastructure
 {
-    public sealed class MySqlConnectionFactory
+    public class MySqlConnectionFactory
     {
         private readonly string _connectionString;
         public MySqlConnectionFactory(string connectionString)

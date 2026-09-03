@@ -1,6 +1,6 @@
 namespace EForm.ImportDocument.Domain
 {
-    public sealed class FlatImportResult
+    public class FlatImportResult
     {
         public string Json { get; set; }
         public string ModelVersion { get; set; }

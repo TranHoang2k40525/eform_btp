@@ -7,7 +7,9 @@
     <AssemblyName>Module.ImportDocument.Application</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ImportPipeline.cs" />
+    <Compile Include="Services\*.cs" />
+    <Compile Include="DTOs\*.cs" />
+    <Compile Include="Interfaces\*.cs" />
     <ProjectReference Include="..\Domain\Module.ImportDocument.Domain.csproj" />
   </ItemGroup>
 </Project>

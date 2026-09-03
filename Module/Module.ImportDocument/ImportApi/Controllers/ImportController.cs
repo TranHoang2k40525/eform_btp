@@ -13,7 +13,7 @@ using EForm.ImportDocument.Domain;
 namespace EForm.ImportDocument.ImportApi.Controllers
 {
     [RoutePrefix("api/import")]
-    public sealed class ImportController : ApiController
+    public class ImportController : ApiController
     {
         private readonly ImportPipelineService _service;
         public ImportController(ImportPipelineService service) { _service = service ?? throw new ArgumentNullException("service"); }

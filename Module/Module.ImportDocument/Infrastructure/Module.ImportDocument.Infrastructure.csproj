@@ -7,10 +7,10 @@
     <AssemblyName>Module.ImportDocument.Infrastructure</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="SecureWorkbookStorage.cs" />
-    <Compile Include="AiParseHttpClient.cs" />
-    <Compile Include="EFormImportPermission.cs" />
-    <Compile Include="MySqlConnectionFactory.cs" />
+    <Compile Include="Storage\*.cs" />
+    <Compile Include="AI\*.cs" />
+    <Compile Include="Security\*.cs" />
+    <Compile Include="Persistence\*.cs" />
     <Compile Include="DevelopmentImportPermission.cs" />
     <ProjectReference Include="..\Domain\Module.ImportDocument.Domain.csproj" />
     <ProjectReference Include="..\Application\Module.ImportDocument.Application.csproj" />
