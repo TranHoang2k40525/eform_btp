@@ -416,7 +416,15 @@ P7 → D4
 
 ---
 
-# 6. Chuẩn bị dữ liệu mẫu
+# 6. Lập trình Backend (.NET MVC): Xây dựng API đọc và bóc tách dữ liệu từ file Excel thô thành cấu trúc JSON phẳng
+
+Backend Web API 2 trên .NET Framework 4.8 đã được dựng theo Clean Architecture. API `POST /api/import/parse` nhận multipart Excel, kiểm tra request/quyền, gọi AI service và trả JSON phẳng gồm `columns`, `rows`, `row_count`, `valid`, `issues`.
+
+# 7. Quản lý code bằng Git, thực hiện Commit/Pull Request chuẩn chỉnh
+
+Mã nguồn được tổ chức trong solution và thay đổi theo commit có phạm vi rõ ràng. Khi làm việc nhóm cần dùng branch theo tính năng, commit nhỏ mô tả đúng thay đổi, mở Pull Request kèm mô tả, kết quả build và kiểm tra trước khi merge.
+
+# 8. Chuẩn bị dữ liệu mẫu
 
 ## 6.1. Cấu trúc thư mục dataset
 
@@ -739,7 +747,29 @@ Accuracy trên nhóm auto-map = 97%
 
 ---
 
-# 12. Kết luận
+# 12. Dataset dùng để làm gì và khả năng xử lý dữ liệu mới
+
+Dataset dùng để dạy model quan hệ giữa ngữ cảnh header Excel, DocTypeCode và DataField eForm; không dùng để học thuộc giá trị báo cáo cụ thể.
+
+Model có thể mapping file mới nếu thuộc DocType đã có schema và header tương tự dữ liệu train. Với cấu trúc hoặc nghiệp vụ hoàn toàn mới, model chỉ trả candidate Top-K và confidence để người dùng xác nhận.
+
+Ngưỡng vận hành: confidence >= 0.90 có thể auto-map sau validation; 0.70–0.90 cần duyệt; dưới 0.70 không tự động map. Khả năng tổng quát chỉ được khẳng định sau đánh giá trên workbook chưa từng có trong train bằng Top-1, Top-3, MRR và coverage.
+
+## 12.1. Đánh giá tiến độ thực tế
+
+| Hạng mục | Trạng thái | Đánh giá |
+|---|---|---|
+| Parser Excel và JSON phẳng | Hoàn thành | Đã có API và pipeline |
+| Tách DocTypeCode | Hoàn thành | 1.231/1.232 file, 27 mã biểu |
+| Sinh eform_fields.jsonl | Hoàn thành bước schema | 434 field từ 30 mẫu |
+| Mapping candidate | Hoàn thành | 14.649 candidate |
+| Verified ground truth | Chưa đạt | Verified hiện bằng 0 |
+| Dataset train có nhãn | Chưa đạt | Chưa nên fine-tune khi chưa có nhãn |
+| Notebook Colab 100 epochs | Đã chuẩn bị | Chờ verified dataset |
+| Backend API | Đạt bản chạy nền | Cần thay quyền local bằng quyền eForm thật |
+| Git commit/Pull Request | Đã quy định quy trình | Cần áp dụng khi merge nhóm |
+
+# 13. Kết luận
 
 Giai đoạn hiện tại đã chốt được hai nội dung quan trọng:
 
@@ -809,3 +839,9 @@ Tích hợp Module Import vào eForm
 - `So_do_luong_du_lieu_Data_Flow.png` — ảnh xem nhanh nếu môi trường hỗ trợ render.
 
 Các file Draw.io sử dụng các đường nối có tọa độ cố định thay vì để Draw.io tự động định tuyến, nhằm tránh tình trạng dây nối bị mất hoặc tự chạy xuyên qua các ô.
+## Cập nhật thực tế 04/09/2026
+
+- DatasetBuilder.ipynb tự lấy DocTypeCode từ tên file raw.
+- Đã quét 1.232 workbook, nhận diện 1.231 file theo 27 mã biểu.
+- AI trả columns, rows, row_count, valid, issues; backend trả nguyên JSON cho FE qua POST /api/import/parse.
+- Train/validation/test cần nhãn DataField xác nhận; mapping candidates đã sinh tự động.
