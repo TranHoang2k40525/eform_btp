@@ -17,8 +17,11 @@ class Settings:
     max_zip_ratio: int = int(os.getenv("AI_IMPORT_MAX_ZIP_RATIO", 100))
     max_rows: int = int(os.getenv("AI_IMPORT_MAX_ROWS", 50_000))
     max_columns: int = int(os.getenv("AI_IMPORT_MAX_COLUMNS", 500))
+    max_cells: int = int(os.getenv("AI_IMPORT_MAX_CELLS", 2_000_000))
+    enforce_upload_root: bool = _flag("AI_IMPORT_ENFORCE_UPLOAD_ROOT", True)
     embedding_enabled: bool = _flag("AI_IMPORT_EMBEDDING_ENABLED")
     embedding_model: str = os.getenv("AI_IMPORT_EMBEDDING_MODEL", "intfloat/multilingual-e5-base")
+    embedding_prefix_mode: str = os.getenv("AI_IMPORT_EMBEDDING_PREFIX_MODE", "auto")
     embedding_cache_dir: str | None = os.getenv("AI_IMPORT_MODEL_CACHE")
     llm_enabled: bool = _flag("AI_IMPORT_LLM_ENABLED")
     llm_base_url: str = os.getenv("AI_IMPORT_LLM_BASE_URL", "http://127.0.0.1:8001/v1")
@@ -28,4 +31,3 @@ class Settings:
 
 
 settings = Settings()
-

@@ -1,78 +1,42 @@
-# Bàn giao nội dung tuần 2 đến tuần 6
+# Bàn giao tuần 2–6 (phiên bản backend tối giản)
 
-Ngày chốt hiện trạng: 2026-09-03.
+## Tuần 2 — Khảo sát
 
-## Tuần 2 — Khảo sát và thiết kế dữ liệu
+Đã đọc toàn bộ 676 file `.cs/.js/.html/.css` trong `C:\Users\hoang\Downloads\eform`, loại thư viện/bin/obj/Handsontable/Bootstrap và không đọc ảnh. Các điểm import/entity chính: `DocumentContent`, `SourceData`, `ValueData`, `FormConfig`, `FormStyle`, `DefineConfigJson`, `SaveDoc`, `DocumentPermissions.SuaVanBan`, `TaskReportPeriod.IsLock`, `importExcel.js` và các validator.
 
-Đã hoàn thành:
+Đã kiểm kê ba workbook thật và viết `CURRENT_SYSTEM_ANALYSIS.md`, `EXCEL_ANALYSIS.md`.
 
-- kiểm kê kiến trúc nhập Excel hiện tại, luồng save và rule engine;
-- kiểm kê 3 workbook, gồm toàn bộ 77 sheet của workbook lớn mà không đọc ảnh;
-- phân loại dữ liệu đầu vào, merged header, công thức, sheet ẩn và rủi ro dữ liệu nhạy cảm;
-- định nghĩa schema JSONL, lọc email/điện thoại/secret, khử trùng lặp;
-- chia train/validation/test theo group để tránh rò rỉ alias/template;
-- notebook `01_data_analysis.ipynb`, `02_data_preprocessing.ipynb`.
+## Tuần 3 — Excel analyzer
 
-Minh chứng: `CURRENT_SYSTEM_ANALYSIS.md`, `EXCEL_ANALYSIS.md`, `DATASET_DESIGN.md`, thư mục `AI Import/Data`.
+`Module/AI Import/Main` phát hiện sheet, vùng bảng, header nhiều dòng, merged cells, giới hạn kích thước và trả metadata/preview. Không hard-code tên file/sheet/hàng.
 
-## Tuần 3 — Baseline và phát hiện cấu trúc
+## Tuần 4 — AI
 
-Đã hoàn thành:
+FastAPI có endpoint nội bộ `/parse`: nhận private path + schema, mapping exact/alias/fuzzy + embedding tùy chọn, validation deterministic và trả JSON phẳng. `/health` và `/model/version` chỉ phục vụ vận hành.
 
-- baseline exact/alias/fuzzy có chuẩn hóa tiếng Việt;
-- phát hiện vùng bảng không phụ thuộc tên sheet/hàng cố định;
-- heuristic header dựa trên text ratio, mật độ và bold;
-- làm phẳng header nhiều tầng và merged cells;
-- kiểm tra allowlist/signature/zip bomb/kích thước workbook;
-- notebook `03_baseline_model.ipynb`, `04_structure_detection.ipynb`.
+Model khuyến nghị là `multilingual-e5-base`; `BGE-M3` là challenger. Không train LLM từ đầu.
 
-## Tuần 4 — Semantic mapping và API AI
+## Tuần 5 — Backend
 
-Đã hoàn thành:
+`Module/Module.ImportDocument` đã tổ chức thành bốn project .NET Framework 4.8:
 
-- hybrid mapper: lexical + optional multilingual embedding;
-- E5-base là model mặc định, BGE-M3 là challenger benchmark;
-- confidence, margin, auto/review/unmapped và top alternatives;
-- API `/health`, `/analyze`, `/detect-table`, `/detect-form`, `/map`, `/validate`, `/feedback`, `/model/version`;
-- validation kiểu dữ liệu/required/min/max/regex/in;
-- lưu provenance, không cho AI tự commit.
+- `Domain` — model thuần;
+- `Application` — `ImportPipelineService`;
+- `Infrastructure` — secure storage, AI HTTP client, eForm permission adapter, MySql.Data;
+- `ImportApi` — Web API 2 controller duy nhất `/api/import/parse`, Swagger, `App_Start`, `Global.asax` (không dùng Program.cs).
 
-## Tuần 5 — Module .NET và tích hợp
+Luồng: FE request → ClaimsPrincipal + permission/lock → kiểm tra/lưu file tạm → gọi AI → trả JSON → dọn file.
 
-Đã hoàn thành:
+## Tuần 6 — môi trường chạy
 
-- project .NET Framework 4.8 tương thích eForm;
-- state machine Uploaded → Analyze → Map → Validate → Confirm → Commit;
-- ownership check, permission/lock check ở đầu luồng và trước commit;
-- secure file storage, SHA-256, idempotency key, optimistic version;
-- adapter cho `DocumentPermissions.SuaVanBan`, `TaskReportPeriod.IsLock` và save service hiện hữu;
-- thiết kế DB, migration và HTTP client đến AI service.
+Đã tạo `Web.config`, Swagger registration, MySQL migration `001_minimal_import.sql`, IIS guide, model training guide và evidence benchmark/smoke. Thư mục test đã xóa theo yêu cầu.
 
-Còn bước phụ thuộc môi trường eForm: hiện thực hai port `IEFormPermissionPort` và `IEFormDocumentWritePort` bằng DI của solution gốc, sau đó thêm Web API route/CSRF theo framework xác thực đang dùng. Adapter cố ý không giả lập logic production.
+Build cuối: `dotnet build .\eform_btp.slnx -c Release` thành công 0 warning/0 error. Analyzer đã chạy trên workbook lớn 77 sheet trong khoảng 7,85 giây.
 
-## Tuần 6 — Đánh giá, bảo mật và triển khai
+## Việc cần nối vào eForm thật
 
-Đã hoàn thành:
-
-- test module .NET và test suite Python;
-- benchmark generator cho 100/1.000/10.000 dòng, tùy chọn nhiều sheet;
-- quy trình fine-tune, metric top-k/MRR, no-regression release gate;
-- incremental training chỉ dùng feedback đã duyệt;
-- hướng dẫn IIS, logging, retention, rollback;
-- notebook `05_train_embedding.ipynb`, `06_evaluation.ipynb`, `07_incremental_training.ipynb`.
-
-Chưa chạy tại máy hiện tại:
-
-- Python test/benchmark vì máy không có Python;
-- fine-tune/benchmark E5 và BGE-M3 vì không có runtime Python/GPU và người dùng yêu cầu chỉ hướng dẫn;
-- integration test ghi thật vào eForm vì workspace này không được phép sửa source gốc/database production.
-
-## Definition of done trước demo
-
-1. Cài Python và chạy toàn bộ test Python.
-2. Chép ba workbook đã được phép sử dụng vào `Data/raw` cục bộ (không commit).
-3. Chạy analyzer/benchmark, lưu JSON vào evidence của báo cáo.
-4. Xuất schema field thật từ eForm, thay catalog example.
-5. Wire hai eForm adapter, chạy trên database staging đã backup.
-6. Demo với tài khoản có quyền, tài khoản không quyền và kỳ đã khóa.
-
+1. Implement `ExistingEFormPermissionPort` bằng service quyền/khóa thật.
+2. IIS gọi `Global.asax/Application_Start`, khởi tạo composition root và Web API routes.
+3. Chạy migration trên staging sau backup.
+4. Khởi động FastAPI private, kiểm `/health`/`/model/version`.
+5. Gọi Swagger backend bằng tài khoản thật và kiểm tra JSON phẳng trước khi nối save form.

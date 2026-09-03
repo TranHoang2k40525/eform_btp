@@ -1,72 +1,48 @@
-# Test report
+# Test và smoke evidence
 
-Ngày chạy: 2026-09-03. Môi trường: Windows, .NET SDK 10.0.302, .NET Framework reference assemblies 4.8. Python chưa được cài trên máy này.
+Ngày chốt: 2026-09-03. Theo yêu cầu mới, thư mục test đã được xóa khỏi module; Swagger là cách kiểm thử API chính.
 
-## Đã chạy
-
-Command:
+## Backend build
 
 ```powershell
-dotnet build '.\Module\Module.ImportDocument\Tests\Module.ImportDocument.Tests.csproj' --configuration Release
+dotnet build .\eform_btp.slnx -c Release
 ```
 
-Kết quả: build succeeded, 0 warning, 0 error.
+Kết quả lần cuối: build thành công, 0 warning, 0 error cho `Solution.Domain`, `Module.ImportDocument.Domain`, `Application`, `Infrastructure`, `ImportApi`.
 
-Command:
+## Python/API
 
-```powershell
-& '.\Module\Module.ImportDocument\Tests\bin\Release\net48\Module.ImportDocument.Tests.exe'
-```
+Trước khi dọn thư mục test theo yêu cầu, test suite đã chạy 15/15 pass, coverage 87%. Sau thay đổi, đã compile toàn bộ Python và xác nhận 7 notebook là JSON hợp lệ. Kiểm thử vận hành dùng `GET /health`, `GET /model/version`, và `POST /parse` qua Swagger tại `/docs`.
 
-Kết quả: 8/8 pass:
+## Smoke workbook thật
 
-1. state machine cho phép transition hợp lệ;
-2. state machine chặn nhảy thẳng sang Committed;
-3. upload tạo job Uploaded;
-4. full flow đến Committed;
-5. commit gọi lặp lại idempotent;
-6. owner isolation;
-7. kỳ/document khóa bị từ chối;
-8. extension upload allowlist.
+Analyzer read-only đã chạy trên ba workbook được chỉ định, không xuất cell value/ảnh:
 
-## Đã viết nhưng chưa chạy tại máy này
+| Workbook | Sheet | Visible/hidden | Region | Merge | Thời gian |
+|---|---:|---:|---:|---:|---:|
+| UBND Phường Láng 01a | 1 | 1/0 | 2 | 19 | 12,06 ms |
+| ví dụ 2 | 1 | 1/0 | 1 | 13 | 9,69 ms |
+| Tổng hợp biểu mẫu KHTC | 77 | 67/10 | 205 | 3.006 | 7.849,99 ms |
 
-Python test suite:
+Evidence: `Docs/evidence/workbook-smoke.json`.
 
-- analyzer visible/hidden sheet;
-- row-band/header/multi-level header detection;
-- exact alias mapping và unknown review;
-- required/type/min validation;
-- fake XLSX/legacy XLS rejection;
-- FastAPI health/model version.
+## Benchmark synthetic
 
-Lý do chưa chạy: `python`, `py`, `pip` không tồn tại trong PATH. Đây không phải kết quả pass; cần chạy đúng command trong `MODEL_TRAINING.md` sau khi cài Python.
+| Dữ liệu | Tổng thời gian |
+|---|---:|
+| 1 sheet × 100 hàng | 36,33 ms |
+| 1 sheet × 1.000 hàng | 66,64 ms |
+| 1 sheet × 10.000 hàng | 419,36 ms |
+| 10 sheet × 1.000 hàng | 447,05 ms |
 
-## Benchmark chưa chạy
+Evidence: `Docs/evidence/benchmark-synthetic.json`, `benchmark-multisheet.json`. Đây là một lượt warm run, chưa phải SLA/p95 production.
 
-`benchmark.py` sinh workbook 100/1.000/10.000 hàng và đo parse/analyze tổng. Không ghi số benchmark giả. Người chạy cần lưu:
+## UAT cần làm trên eForm staging
 
-- CPU/RAM/môi trường;
-- số hàng/sheet/file size;
-- total/service elapsed;
-- p50/p95 qua tối thiểu 5 lượt sau warm-up;
-- lexical vs E5 vs BGE-M3 mapping latency;
-- peak memory.
-
-## Tiêu chí UAT
-
-- 100% ca authorization/lock/owner/CSRF đúng.
-- 0 duplicate khi commit lại.
-- 0 blocking validation error được commit.
-- Top-1 >= ngưỡng phê duyệt; top-3 >= 0.95 đề xuất.
-- False auto-accept được review riêng, mục tiêu gần 0 trên bộ nghiệp vụ trọng yếu.
-- 10.000 dòng không vượt giới hạn timeout/memory đã thống nhất.
-- Raw workbook/secret không xuất hiện trong log/artifact Git.
-
-## Hạn chế test hiện tại
-
-- In-memory repository không thay thế test optimistic concurrency trên MySQL.
-- Chưa có adapter thật đến permission/save service của source eForm.
-- Chưa chạy ba workbook gốc qua Python runtime mới.
-- Chưa đo semantic model vì người dùng yêu cầu tự chạy huấn luyện.
+1. User có quyền/kỳ mở và user không quyền/kỳ khóa.
+2. File giả, file quá lớn, ZIP không phải XLSX.
+3. Merged header, nhiều sheet, formula không được thực thi.
+4. Mapping confidence thấp phải hiện review.
+5. AI down/timeout trả lỗi rõ ràng, không partial commit.
+6. Đối chiếu kết quả với `DocumentContent.SourceData`, `ValueData`, `FormConfig`, `FormStyle` sau khi wire save service thật.
 

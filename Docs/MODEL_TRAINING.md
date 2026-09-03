@@ -109,6 +109,9 @@ Từ thư mục `Train`, thêm `Main` vào module path:
 $env:PYTHONPATH = (Resolve-Path '..\Main').Path
 python evaluate_baseline.py `
   --test '..\Data\processed\v1\test.jsonl' `
+  --catalog '..\Data\processed\v1\train.jsonl' `
+  --catalog '..\Data\processed\v1\validation.jsonl' `
+  --catalog '..\Data\processed\v1\test.jsonl' `
   --output '..\Models\baseline-evaluation.json'
 ```
 
@@ -122,6 +125,9 @@ Lưu top-1, top-3, top-5, MRR. Không thay test set sau khi nhìn kết quả ch
 python evaluate_model.py `
   --model 'intfloat/multilingual-e5-base' `
   --test '..\Data\processed\v1\test.jsonl' `
+  --catalog '..\Data\processed\v1\train.jsonl' `
+  --catalog '..\Data\processed\v1\validation.jsonl' `
+  --catalog '..\Data\processed\v1\test.jsonl' `
   --output '..\Models\e5-pretrained-evaluation.json'
 ```
 
@@ -153,6 +159,9 @@ Ghi chú:
 python evaluate_model.py `
   --model '..\Models\mapping-e5-v1' `
   --test '..\Data\processed\v1\test.jsonl' `
+  --catalog '..\Data\processed\v1\train.jsonl' `
+  --catalog '..\Data\processed\v1\validation.jsonl' `
+  --catalog '..\Data\processed\v1\test.jsonl' `
   --output '..\Models\mapping-e5-v1\evaluation.json'
 
 python compare_release.py `
@@ -180,10 +189,13 @@ Không fine-tune ngay. Trước hết đánh giá pretrained trên đúng test s
 python evaluate_model.py `
   --model 'BAAI/bge-m3' `
   --test '..\Data\processed\v1\test.jsonl' `
+  --catalog '..\Data\processed\v1\train.jsonl' `
+  --catalog '..\Data\processed\v1\validation.jsonl' `
+  --catalog '..\Data\processed\v1\test.jsonl' `
   --output '..\Models\bge-m3-pretrained-evaluation.json'
 ```
 
-So sánh accuracy, p95 latency và RAM/VRAM. Chỉ chọn BGE-M3 nếu cải thiện đủ lớn để bù chi phí. Vì runtime mapper hiện dùng contract E5 prefix, trước production cần contract test model-specific và hiệu chỉnh semantic score.
+So sánh accuracy, p95 latency và RAM/VRAM. Chỉ chọn BGE-M3 nếu cải thiện đủ lớn để bù chi phí. Script/runtime tự chọn prefix E5 khi model ID/path chứa `e5`, còn BGE dùng text không prefix; vẫn cần contract test model-specific và hiệu chỉnh semantic score trước production.
 
 ## 12. Bật model trong service
 
@@ -204,6 +216,15 @@ Invoke-RestMethod 'http://127.0.0.1:8010/health'
 Invoke-RestMethod 'http://127.0.0.1:8010/model/version'
 ```
 
+Test `/parse` (body phải chứa path private và target_schema_json):
+
+```powershell
+$body = @{ path='D:\eform-import\uploads\uploaded.xlsx'; target_schema_json='{"fields":[{"field_id":"organization_name","label":"Tên đơn vị"},{"field_id":"total","label":"Tổng số","data_type":"number"}]}' ; include_hidden=$false; max_rows=50000 } | ConvertTo-Json -Depth 8
+Invoke-RestMethod 'http://127.0.0.1:8010/parse' -Method Post -ContentType 'application/json' -Body $body
+```
+
+The old `/map` payload below is historical and is not an endpoint to call.
+
 Test mapping:
 
 ```powershell
@@ -215,7 +236,7 @@ $body = @{
     @{ field_id='total'; label='Tổng số'; aliases=@('Tổng cộng'); data_type='number'; required=$true }
   )
 } | ConvertTo-Json -Depth 6
-Invoke-RestMethod 'http://127.0.0.1:8010/map' -Method Post -ContentType 'application/json' -Body $body
+Invoke-RestMethod 'http://127.0.0.1:8010/parse' -Method Post -ContentType 'application/json' -Body $body
 ```
 
 ## 13. Chạy test phần mềm
@@ -227,9 +248,10 @@ Từ `Main`:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r '..\Tests\requirements-test.txt'
+pip install -r '.\requirements.txt'
 $env:PYTHONPATH = (Get-Location).Path
-python -m pytest '..\Tests' -q --cov=ai_import --cov-report=term-missing
+Invoke-RestMethod 'http://127.0.0.1:8010/health'
+Invoke-RestMethod 'http://127.0.0.1:8010/model/version'
 ```
 
 ### Analyzer với workbook được phép dùng
@@ -247,8 +269,7 @@ Không commit JSON preview nếu chứa cell value nhạy cảm.
 Từ root dự án:
 
 ```powershell
-dotnet build '.\Module\Module.ImportDocument\Tests\Module.ImportDocument.Tests.csproj' -c Release
-& '.\Module\Module.ImportDocument\Tests\bin\Release\net48\Module.ImportDocument.Tests.exe'
+dotnet build '.\eform_btp.slnx' -c Release
 ```
 
 ## 14. Test tích hợp/UAT
@@ -292,4 +313,3 @@ Sau đó tạo dataset version mới, train `mapping-e5-v2`, đánh giá trên t
 - kết quả Python/.NET test;
 - 5–10 ví dụ đúng, sai, mơ hồ kèm giải thích confidence;
 - version/hash artifact và quyết định release/không release.
-

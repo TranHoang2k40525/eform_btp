@@ -36,8 +36,11 @@ class OptionalEmbeddingScorer:
         if not self.enabled or not targets:
             return [0.0] * len(targets)
         model = self._load()
-        corpus = [f"passage: {item.label}. {item.description}. {'; '.join(item.aliases)}" for item in targets]
-        query = model.encode([f"query: {source}"], normalize_embeddings=True)
+        mode = self.config.embedding_prefix_mode.lower()
+        use_e5_prefix = mode == "e5" or (mode == "auto" and "e5" in self.config.embedding_model.lower())
+        prefix_query, prefix_passage = ("query: ", "passage: ") if use_e5_prefix else ("", "")
+        corpus = [f"{prefix_passage}{item.label}. {item.description}. {'; '.join(item.aliases)}" for item in targets]
+        query = model.encode([f"{prefix_query}{source}"], normalize_embeddings=True)
         vectors = model.encode(corpus, normalize_embeddings=True)
         return [float(item) for item in (query @ vectors.T)[0]]
 
@@ -95,4 +98,3 @@ class HybridFieldMapper:
         return MapResponse(mappings=result,
             model_version=f"hybrid-v1:{self.config.embedding_model if self.embedding.enabled else 'lexical'}",
             requires_review=any(item.decision != "auto" for item in result))
-

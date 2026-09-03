@@ -49,6 +49,7 @@ class DeterministicValidator:
                 issues.append(ValidationIssueDto(row=0, field_id=field.field_id, severity="error",
                     code="REQUIRED_COLUMN_UNMAPPED", message=f"Chưa ánh xạ cột bắt buộc: {field.label}."))
         for row_index, row in enumerate(request.rows, start=1):
+            invalid_fields: set[str] = set()
             for field_id, column in column_map.items():
                 value = row[column] if column < len(row) else None
                 field = fields.get(field_id)
@@ -56,11 +57,12 @@ class DeterministicValidator:
                     issues.append(ValidationIssueDto(row=row_index, column=column, field_id=field_id,
                         severity="error", code="REQUIRED_VALUE", message=f"{field.label} là bắt buộc.", value=value))
                 if field and not _valid_type(value, field.data_type):
+                    invalid_fields.add(field_id)
                     issues.append(ValidationIssueDto(row=row_index, column=column, field_id=field_id,
                         severity="error", code="INVALID_TYPE", message=f"{field.label} không đúng kiểu {field.data_type}.", value=value))
             for rule in request.rules:
                 column = column_map.get(rule.field_id)
-                if column is None:
+                if column is None or rule.field_id in invalid_fields:
                     continue
                 value = row[column] if column < len(row) else None
                 failed = False
@@ -84,4 +86,3 @@ class DeterministicValidator:
         errors = sum(item.severity.lower() == "error" for item in issues)
         warnings = sum(item.severity.lower() != "error" for item in issues)
         return ValidateResponse(valid=errors == 0, error_count=errors, warning_count=warnings, issues=issues)
-

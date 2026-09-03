@@ -66,26 +66,18 @@ def choose_header_rows(
 
 
 def flatten_headers(matrix: list[list[Any]], start_row: int, end_row: int, start_col: int, end_col: int) -> list[str]:
-    headers: list[str] = []
-    inherited: list[Any] = [None] * (end_col + 1)
+    header_parts: list[list[str]] = [[] for _ in range(start_col, end_col + 1)]
     for row_index in range(start_row, end_row + 1):
         last_value: Any = None
         for col_index in range(start_col, end_col + 1):
             value = matrix[row_index][col_index] if col_index < len(matrix[row_index]) else None
             if _non_empty(value):
                 last_value = value
-                inherited[col_index] = value
-            elif last_value is not None:
-                inherited[col_index] = last_value
-    for col_index in range(start_col, end_col + 1):
-        parts: list[str] = []
-        for row_index in range(start_row, end_row + 1):
-            value = matrix[row_index][col_index] if col_index < len(matrix[row_index]) else None
-            if not _non_empty(value):
-                value = inherited[col_index]
+            else:
+                value = last_value
             text = str(value).strip() if _non_empty(value) else ""
+            parts = header_parts[col_index - start_col]
             if text and (not parts or parts[-1] != text):
                 parts.append(text)
-        headers.append(" / ".join(parts) or f"Cột {col_index + 1}")
-    return headers
-
+    return [" / ".join(parts) or f"Cột {start_col + offset + 1}"
+            for offset, parts in enumerate(header_parts)]

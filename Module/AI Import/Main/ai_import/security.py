@@ -20,6 +20,11 @@ def validate_workbook_path(raw_path: str, config: Settings) -> tuple[Path, str]:
         raise UnsafeWorkbookError("Đường dẫn không phải là tệp.")
     if path.suffix.lower() not in ALLOWED_EXTENSIONS:
         raise UnsafeWorkbookError("Chỉ hỗ trợ .xlsx và .xlsm; .xls cần được chuyển đổi trước.")
+    if config.enforce_upload_root:
+        try:
+            path.relative_to(config.upload_dir.resolve())
+        except ValueError as exc:
+            raise UnsafeWorkbookError("Tệp nằm ngoài thư mục upload được phép.") from exc
     size = path.stat().st_size
     if size <= 0 or size > config.max_file_bytes:
         raise UnsafeWorkbookError(f"Kích thước tệp không hợp lệ hoặc vượt {config.max_file_bytes} byte.")
@@ -29,6 +34,9 @@ def validate_workbook_path(raw_path: str, config: Settings) -> tuple[Path, str]:
         raise UnsafeWorkbookError("Chữ ký tệp không phải Office Open XML.")
     total = 0
     with zipfile.ZipFile(path, "r") as archive:
+        names = set(archive.namelist())
+        if "[Content_Types].xml" not in names or "xl/workbook.xml" not in names:
+            raise UnsafeWorkbookError("ZIP không phải workbook Excel Open XML hợp lệ.")
         for info in archive.infolist():
             total += info.file_size
             if info.compress_size == 0 and info.file_size > 0:
@@ -42,4 +50,3 @@ def validate_workbook_path(raw_path: str, config: Settings) -> tuple[Path, str]:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return path, digest.hexdigest()
-

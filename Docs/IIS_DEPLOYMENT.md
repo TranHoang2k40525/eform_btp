@@ -15,14 +15,12 @@ dotnet build '.\Module\Module.ImportDocument\Module.ImportDocument.csproj' -c Re
 
 Reference DLL vào solution eForm hoặc thêm project vào solution khi merge. Tại composition root:
 
-1. đăng ký SQL repository production;
-2. đăng ký `SecureImportFileStorage` với path ngoài web root;
-3. đăng ký `EFormDocumentAuthorizationAdapter` với permission port thật;
-4. đăng ký `EFormCommitGateway` với save port thật;
-5. đăng ký singleton/reused `HttpClient` trỏ FastAPI;
-6. map ASP.NET Web API routes, auth filter, CSRF và exception-to-status mapping.
+1. đăng ký `SecureWorkbookStorage` với path ngoài web root;
+2. đăng ký `EFormImportPermission` với permission port thật;
+3. đăng ký reusable `HttpClient` + `AiParseHttpClient` trỏ FastAPI;
+4. gọi `ImportApiRuntime.Configure(...)` và map route/Swagger/auth filter/CSRF.
 
-Không dùng `InMemoryImportJobRepository` ở production.
+Không đăng ký fake permission/storage ở production.
 
 ## Cài Python service
 
@@ -85,8 +83,6 @@ Không tự chạy từ web startup. DBA chạy migration đã review trên stag
 
 ## Rollback
 
-- Lỗi AI: tắt AI import flag; import hiện hữu vẫn hoạt động.
+- Lỗi AI: tắt feature flag; endpoint trả 502, không có partial commit.
 - Model regression: trỏ biến model về artifact cũ, restart Python, xác nhận `/model/version`.
-- Module lỗi trước commit: cancel/retry job; không xóa vội audit.
-- Dữ liệu đã commit sai: dùng quy trình nghiệp vụ/versioning eForm, không chạy SQL xóa tự động.
-
+- Module lỗi: retry request sau khi kiểm tra correlation/log; file tạm luôn được dọn trong `finally`.

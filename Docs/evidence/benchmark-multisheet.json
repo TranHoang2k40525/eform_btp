@@ -1,0 +1,15 @@
+[
+  {
+    "rows": 1000,
+    "sheets": 10,
+    "total_ms": 447.05,
+    "service_elapsed_ms": 445.69,
+    "security_ms": 15.64,
+    "parse_ms": 10.22,
+    "table_detection_ms": 419.83,
+    "mapping_ms": 0.92,
+    "inference_ms": 0.0,
+    "validation_ms": 0.23,
+    "regions": 10
+  }
+]

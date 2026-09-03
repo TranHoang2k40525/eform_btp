@@ -3,7 +3,10 @@
 **/obj/
 **/__pycache__/
 **/.pytest_cache/
+.coverage
 **/.venv/
+.uv-cache/
+.uv-python/
 **/runtime/
 *.user
 *.suo
@@ -12,4 +15,4 @@
 *.safetensors
 *.pt
 *.pth
-
+**/Data

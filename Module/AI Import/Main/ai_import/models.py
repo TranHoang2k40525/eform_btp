@@ -48,13 +48,14 @@ class WorkbookAnalysisDto(BaseModel):
     sha256: str
     sheets: list[SheetAnalysisDto]
     warnings: list[str] = Field(default_factory=list)
+    timings_ms: dict[str, float] = Field(default_factory=dict)
     elapsed_ms: float
 
 
 class AnalyzePathRequest(BaseModel):
     path: str
     include_hidden: bool = False
-    preview_rows: int = Field(default=100, ge=1, le=1000)
+    preview_rows: int = Field(default=100, ge=1, le=50000)
 
 
 class TargetFieldDto(BaseModel):
@@ -64,6 +65,14 @@ class TargetFieldDto(BaseModel):
     data_type: str = "string"
     required: bool = False
     description: str = ""
+
+
+class ParseRequest(BaseModel):
+    path: str
+    target_fields: list[TargetFieldDto] = Field(default_factory=list)
+    target_schema_json: str | None = None
+    include_hidden: bool = False
+    max_rows: int = Field(default=50000, ge=1, le=50000)
 
 
 class MappingCandidateDto(BaseModel):
@@ -156,4 +165,3 @@ class MappingDecision(str, Enum):
     auto = "auto"
     review = "review"
     unmapped = "unmapped"
-

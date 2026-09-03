@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import time
+import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 from typing import Any
 
 from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
 
 from .config import Settings
 from .detection import choose_header_rows, find_row_bands, flatten_headers
@@ -27,6 +28,19 @@ def _trim_matrix(matrix: list[list[Any]]) -> tuple[list[list[Any]], int, int]:
     return [row[: max_col + 1] for row in matrix[: max_row + 1]], max_row + 1, max_col + 1
 
 
+def _read_merge_ranges(workbook_path: Path, worksheet_path: str) -> list[str]:
+    """Read merge refs directly; read-only openpyxl skips drawings/images and merged-cell objects."""
+    ranges: list[str] = []
+    namespace = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}mergeCell"
+    normalized = worksheet_path.lstrip("/")
+    with zipfile.ZipFile(workbook_path, "r") as archive, archive.open(normalized, "r") as stream:
+        for _, element in ET.iterparse(stream, events=("end",)):
+            if element.tag == namespace and element.attrib.get("ref"):
+                ranges.append(element.attrib["ref"])
+            element.clear()
+    return ranges
+
+
 class WorkbookAnalyzer:
     def __init__(self, config: Settings):
         self.config = config
@@ -34,14 +48,22 @@ class WorkbookAnalyzer:
     def analyze(self, raw_path: str, include_hidden: bool = False, preview_rows: int = 100) -> WorkbookAnalysisDto:
         started = time.perf_counter()
         path, digest = validate_workbook_path(raw_path, self.config)
-        workbook = load_workbook(path, read_only=False, data_only=False, keep_links=False)
+        secured = time.perf_counter()
+        # read_only avoids openpyxl's drawing/image loader. The service never inspects media entries.
+        workbook = load_workbook(path, read_only=True, data_only=False, keep_links=False)
+        parsed = time.perf_counter()
         sheets: list[SheetAnalysisDto] = []
         warnings: list[str] = []
         try:
             for worksheet in workbook.worksheets:
                 if worksheet.sheet_state != "visible" and not include_hidden:
                     continue
-                if worksheet.max_row > self.config.max_rows or worksheet.max_column > self.config.max_columns:
+                if worksheet.max_row is None or worksheet.max_column is None:
+                    worksheet.calculate_dimension(force=True)
+                max_row = worksheet.max_row or 0
+                max_column = worksheet.max_column or 0
+                if (max_row > self.config.max_rows or max_column > self.config.max_columns
+                        or max_row * max_column > self.config.max_cells):
                     warnings.append(f"Bỏ qua sheet {worksheet.title}: vượt giới hạn hàng/cột.")
                     continue
                 matrix = [list(row) for row in worksheet.iter_rows(values_only=True)]
@@ -52,7 +74,7 @@ class WorkbookAnalyzer:
                     continue
                 bold_rows = {
                     cell.row - 1
-                    for row in worksheet.iter_rows(min_row=1, max_row=min(worksheet.max_row, 10))
+                    for row in worksheet.iter_rows(min_row=1, max_row=min(max_row, 10))
                     for cell in row
                     if cell.value is not None and cell.font and cell.font.bold
                 }
@@ -76,12 +98,15 @@ class WorkbookAnalyzer:
                         end_row=band_end + 1, start_column=start_col + 1, end_column=end_col + 1,
                         header_start_row=header_start + 1, header_end_row=header_end + 1,
                         data_start_row=data_start + 1, confidence=confidence, headers=headers, rows=rows))
-                merges = [str(item) for item in worksheet.merged_cells.ranges]
+                merges = _read_merge_ranges(path, worksheet._worksheet_path)
                 sheets.append(SheetAnalysisDto(name=worksheet.title, state=worksheet.sheet_state,
                     row_count=row_count, column_count=column_count, merged_ranges=merges,
                     regions=regions, warnings=[] if regions else ["Không phát hiện được vùng bảng đủ tin cậy."]))
         finally:
             workbook.close()
+        finished = time.perf_counter()
         return WorkbookAnalysisDto(file_name=Path(path).name, sha256=digest, sheets=sheets, warnings=warnings,
-            elapsed_ms=round((time.perf_counter() - started) * 1000, 2))
-
+            timings_ms={"security": round((secured - started) * 1000, 2),
+                        "parse": round((parsed - secured) * 1000, 2),
+                        "table_detection": round((finished - parsed) * 1000, 2)},
+            elapsed_ms=round((finished - started) * 1000, 2))
