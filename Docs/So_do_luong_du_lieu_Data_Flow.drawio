@@ -1,0 +1,151 @@
+<mxfile host="app.diagrams.net" modified="2026-09-03T00:00:00.000Z" agent="ChatGPT" version="24.7.17">
+  <diagram id="SlungdliuModuleImportExcelthng" name="Sơ đồ luồng dữ liệu - Module Import Excel thông minh">
+    <mxGraphModel dx="2400" dy="930" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="930" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="dfd_note" value="QUY ƯỚC: E = tác nhân bên ngoài • P = tiến trình xử lý • D = kho dữ liệu&#xa;E1 được vẽ lặp lại ở hai đầu để tránh dây quay ngược và giúp sơ đồ dễ đọc." style="shape=note;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=12;align=left;verticalAlign=top;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.2;" vertex="1" parent="1">
+          <mxGeometry x="690" y="45" width="1020" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1a" value="E1. Người dùng&#xa;Tải file" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=14;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="25" y="245" width="170" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="p1" value="P1. Tiếp nhận và&#xa;kiểm tra file" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=14;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="245" y="240" width="190" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="p2" value="P2. Phân tích&#xa;cấu trúc Excel" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=14;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="485" y="240" width="190" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="p3" value="P3. Tạo&#xa;ngữ cảnh phân cấp" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=14;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="725" y="240" width="200" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="p4" value="P4. Ánh xạ AI&#xa;Excel → DataField" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=14;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="975" y="240" width="200" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="p5" value="P5. Kiểm tra&#xa;nghiệp vụ eForm" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=14;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="1225" y="240" width="200" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="p6" value="P6. Tạo dữ liệu&#xa;xem trước" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=14;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="1475" y="240" width="190" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1b" value="E1. Người dùng&#xa;Xem và xác nhận" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=14;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="1715" y="240" width="190" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="p7" value="P7. Ghi dữ liệu&#xa;chính thức" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=14;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="1955" y="240" width="190" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="d4" value="D4. MySQL eForm" style="shape=datastore;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=13;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="2195" y="245" width="170" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="d1" value="D1. File Excel tạm" style="shape=datastore;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=13;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="250" y="570" width="180" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="d2" value="D2. Schema eForm&#xa;DocType • DataField • Template" style="shape=datastore;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=13;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="555" width="230" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="d3" value="D3. Mô hình AI local&#xa;EFormExcelMapper-v1" style="shape=datastore;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=13;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="760" y="570" width="200" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="d5" value="D5. Phản hồi mapping&#xa;đã xác minh" style="shape=datastore;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontColor=#000000;fontFamily=Arial;fontSize=13;align=center;verticalAlign=middle;sketch=1;jiggle=1.2;curveFitting=1;shadow=0;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="1710" y="570" width="200" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="f1" value="F1. File Excel" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="195" y="285" as="sourcePoint"/>
+            <mxPoint x="245" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f2" value="F2. File hợp lệ" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="435" y="285" as="sourcePoint"/>
+            <mxPoint x="485" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f3" value="F3. Cấu trúc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="675" y="285" as="sourcePoint"/>
+            <mxPoint x="725" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f4" value="F4. Ngữ cảnh" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="925" y="285" as="sourcePoint"/>
+            <mxPoint x="975" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f5" value="F5. Mapping" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1175" y="285" as="sourcePoint"/>
+            <mxPoint x="1225" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f6" value="F6. Dữ liệu hợp lệ" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1425" y="285" as="sourcePoint"/>
+            <mxPoint x="1475" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f7" value="F7. Preview" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1665" y="285" as="sourcePoint"/>
+            <mxPoint x="1715" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f8" value="F8. Xác nhận" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1905" y="285" as="sourcePoint"/>
+            <mxPoint x="1955" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f9" value="F9. Dữ liệu lưu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2145" y="285" as="sourcePoint"/>
+            <mxPoint x="2195" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fd1" value="Lưu tạm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="340" y="330" as="sourcePoint"/>
+            <mxPoint x="340" y="570" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fd3" value="Mô hình" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="860" y="570" as="sourcePoint"/>
+            <mxPoint x="1075" y="330" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="860" y="475"/>
+              <mxPoint x="1075" y="475"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fd2_ai" value="Candidate DataField" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1115" y="555" as="sourcePoint"/>
+            <mxPoint x="1075" y="330" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="1115" y="430"/>
+              <mxPoint x="1075" y="430"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fd2_val" value="Schema + Rule" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1200" y="555" as="sourcePoint"/>
+            <mxPoint x="1325" y="330" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="1200" y="455"/>
+              <mxPoint x="1325" y="455"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fd5" value="Correction" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=11;endArrow=classic;endFill=1;strokeWidth=1.35;sketch=1;jiggle=1.0;curveFitting=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1810" y="330" as="sourcePoint"/>
+            <mxPoint x="1810" y="570" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
