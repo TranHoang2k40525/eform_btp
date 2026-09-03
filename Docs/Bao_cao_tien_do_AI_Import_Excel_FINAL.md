@@ -1,7 +1,9 @@
 # BÁO CÁO TIẾN ĐỘ NGHIÊN CỨU VÀ THIẾT KẾ MODULE IMPORT EXCEL THÔNG MINH
 
 **Đề tài:** Nghiên cứu và ứng dụng AI xây dựng Module Import file Excel thông minh, tự động ánh xạ dữ liệu cho hệ thống Báo cáo thống kê eForm  
-**Thời điểm báo cáo:** 03/09/2026  
+**Thời điểm báo cáo:** 03/09/2026
+
+**Phiên bản sơ đồ:** FINAL - đã bố trí lại luồng để các dây dẫn không đè lên nhau, không xuyên qua khối và không bị khối che khuất.  
 **Trọng tâm tiến độ:**  
 - Chốt kiến trúc hệ thống và luồng dữ liệu (Data Flow) cho Module Import Excel thông minh.  
 - Chuẩn bị dữ liệu mẫu và thiết kế cấu trúc Prompt/Input để mô hình AI hiểu cấu trúc phân cấp của các chỉ tiêu thống kê.
@@ -158,11 +160,31 @@ Một nguyên tắc thiết kế quan trọng là:
 
 ## 4.1. Kiến trúc tổng thể
 
-![Sơ đồ kiến trúc Module Import Excel thông minh](So_do_kien_truc_AI_Import_Excel.svg)
+![Sơ đồ kiến trúc Module Import Excel thông minh](So_do_kien_truc_AI_Import_Excel_FINAL.svg)
 
-**File nguồn Draw.io:** `So_do_kien_truc_AI_Import_Excel.drawio`
+**File nguồn Draw.io:** `So_do_kien_truc_AI_Import_Excel_FINAL.drawio`
 
-Sơ đồ được thiết kế dạng sketch/vẽ tay, chỉ sử dụng hộp, chữ và mũi tên, màu đen trắng, không sử dụng icon.
+Sơ đồ được thiết kế dạng sketch/vẽ tay, chỉ sử dụng hộp, chữ và mũi tên, màu đen trắng, không sử dụng icon. Bố cục FINAL sử dụng các hành lang dây riêng cho luồng chính, luồng schema, feedback, preview/confirm và commit để tránh dây giao nhau hoặc xuyên qua các khối.
+
+### 4.1.1. Quy ước đọc sơ đồ kiến trúc FINAL
+
+Sơ đồ được bố trí theo ba vùng:
+
+```text
+Hàng chính:
+Người dùng → .NET Import API → Excel Parser → Context Builder
+→ AI Mapper → Validation → Preview
+
+Hàng dữ liệu:
+eForm Metadata Provider → MySQL
+
+Luồng ngoài:
+Preview/Confirm đi theo hành lang phía trên;
+Commit đi theo hành lang phía dưới;
+Feedback đi theo nhánh riêng.
+```
+
+Cách bố trí này giúp sơ đồ phản ánh rõ trách nhiệm của từng thành phần mà không làm rối luồng xử lý.
 
 ## 4.2. Các thành phần chính
 
@@ -287,9 +309,19 @@ Chỉ `.NET eForm` được commit dữ liệu sau khi:
 
 # 5. Sơ đồ luồng dữ liệu - Data Flow
 
-![Data Flow Module Import Excel thông minh](So_do_Data_Flow_AI_Import_Excel.svg)
+![Data Flow Module Import Excel thông minh](So_do_Data_Flow_AI_Import_Excel_FINAL.svg)
 
-**File nguồn Draw.io:** `So_do_Data_Flow_AI_Import_Excel.drawio`
+**File nguồn Draw.io:** `So_do_Data_Flow_AI_Import_Excel_FINAL.drawio`
+
+## 5.0. Quy ước đọc Data Flow FINAL
+
+Data Flow được bố trí theo hướng trái sang phải cho luồng nghiệp vụ chính:
+
+```text
+E1 → P1 → P2 → P3 → P4 → P5 → P6
+```
+
+Các kho dữ liệu `D1` đến `D5` được đặt thành một hàng riêng phía dưới. Mỗi luồng dữ liệu từ/đến kho có hành lang riêng, nhờ đó tránh chồng dây lên process hoặc data store.
 
 ## 5.1. Luồng dữ liệu chi tiết
 
@@ -731,9 +763,11 @@ Tích hợp API vào eForm
 
 ---
 
-## Phụ lục - File sơ đồ
+## Phụ lục - File sơ đồ FINAL
 
-- `So_do_kien_truc_AI_Import_Excel.drawio`: sơ đồ kiến trúc nguồn Draw.io.
-- `So_do_Data_Flow_AI_Import_Excel.drawio`: sơ đồ luồng dữ liệu nguồn Draw.io.
-- `So_do_kien_truc_AI_Import_Excel.svg`: bản xem nhanh.
-- `So_do_Data_Flow_AI_Import_Excel.svg`: bản xem nhanh.
+- `So_do_kien_truc_AI_Import_Excel_FINAL.drawio`: sơ đồ kiến trúc nguồn Draw.io.
+- `So_do_Data_Flow_AI_Import_Excel_FINAL.drawio`: sơ đồ Data Flow nguồn Draw.io.
+- `So_do_kien_truc_AI_Import_Excel_FINAL.svg`: bản xem nhanh sơ đồ kiến trúc.
+- `So_do_Data_Flow_AI_Import_Excel_FINAL.svg`: bản xem nhanh Data Flow.
+
+Các file Draw.io có thể mở trực tiếp bằng diagrams.net / draw.io để chỉnh sửa tiếp.
