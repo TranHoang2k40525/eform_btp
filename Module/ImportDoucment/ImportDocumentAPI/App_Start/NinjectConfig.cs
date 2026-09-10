@@ -5,6 +5,9 @@ using System.Web.Http.Dependencies;
 using Ninject;
 using Ninject.Syntax;
 using ImportDocument.Application.Services;
+using ImportDocument.Domain.Interfaces;
+using ImportDocument.Infrastructure;
+using ImportDocument.Infrastructure.Repository;
 namespace ImportDocument.ImportApi.App_Start
 {
     public class NinjectDependencyResolver : NinjectDependencyScope, IDependencyResolver
@@ -25,8 +28,10 @@ namespace ImportDocument.ImportApi.App_Start
     {
         public static void Register(HttpConfiguration config)
         {
-            var kernel = new StandardKernel();
+            var kernel = new StandardKernel(new NinjectSettings { LoadExtensions = false });
             kernel.Bind<IImportService>().To<ImportService>().InThreadScope();
+            kernel.Bind<ImportDbContext>().ToSelf().InThreadScope();
+            kernel.Bind<IImportRepository>().To<ImportRepository>().InThreadScope();
             config.DependencyResolver = new NinjectDependencyResolver(kernel);
         }
     }

@@ -5,7 +5,7 @@ namespace ImportDocument.Domain.Interfaces
 {
     public interface IImportRepository
     {
-        Task SaveAsync(FlatImportResult result, CancellationToken cancellationToken);
+        Task SaveAsync(ImportRecord result, CancellationToken cancellationToken);
     }
 }
 

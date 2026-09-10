@@ -845,3 +845,13 @@ Các file Draw.io sử dụng các đường nối có tọa độ cố định 
 - Đã quét 1.232 workbook, nhận diện 1.231 file theo 27 mã biểu.
 - AI trả columns, rows, row_count, valid, issues; backend trả nguyên JSON cho FE qua POST /api/import/parse.
 - Train/validation/test cần nhãn DataField xác nhận; mapping candidates đã sinh tự động.
+
+## Cập nhật 10/09/2026 - ánh xạ phân cấp và JSON chuẩn
+
+- Đã tách ánh xạ cột và ánh xạ hàng phân cấp `Tổng số → Mục La Mã → số nguyên → số thập phân`.
+- Prompt LLM dùng `source_ref/target_ref`, `kind`, `level`, `parent_ref`, `path` và JSON Schema strict; không truyền số liệu báo cáo.
+- Hậu kiểm deterministic chặn ID tự sinh, target trùng, nhầm cấp và nhầm nhánh cha/con; lỗi LLM fallback về baseline.
+- Parser tách nhiều bảng trong cùng sheet theo từng dòng mã cột, không còn đưa giá trị của bảng trước vào `header_path`.
+- Candidate/template chỉ là gợi ý; nhãn train bắt buộc có `verified=true` và `verification_method=human|curated|reviewed`.
+- Đã sửa bộ sinh `eform_fields.jsonl` để nhóm theo marker DocType và giữ `form_index`; tránh lệch mã biểu khi một DocType có nhiều `DocumentContents`. Snapshot hiện sinh 434 field/30 form.
+- `TrainAiImport.ipynb` chỉ nạp split `query/pos/neg` đã build và dùng hard-negative; không còn ghi đè split bằng record mapping thô.

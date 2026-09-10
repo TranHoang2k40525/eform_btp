@@ -14,7 +14,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ImportDocumentAPI</RootNamespace>
     <AssemblyName>ImportDocumentAPI</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <MvcBuildViews>false</MvcBuildViews>
     <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress />
@@ -45,6 +45,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Swashbuckle.Core">
+      <HintPath>..\packages\Swashbuckle.Core.5.6.0\lib\net40\Swashbuckle.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <ProjectReference Include="..\ImportDocument.Domain\ImportDocument.Domain.csproj">
+      <Project>{f9f52254-b103-4081-9b76-b081f1942d12}</Project>
+      <Name>ImportDocument.Domain</Name>
+    </ProjectReference>
     <Reference Include="Ninject">
       <HintPath>..\packages\Ninject.3.3.6\lib\net45\Ninject.dll</HintPath>
       <Private>True</Private>
@@ -170,9 +178,9 @@
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ImportController.cs" />
-    <Compile Include="Controllers\ValuesController.cs" />
-    <Compile Include="Controllers\ImportController.cs" />
-    <Compile Include="App_Start\NinjectConfig.cs" />
+    <Compile Include="App_Start\SwaggerConfig.cs" />
+    <Compile Include="App_Start\SwaggerFileUploadFilter.cs" />
+    <Compile Include="App_Start\SwaggerConfig.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -313,3 +321,4 @@
   <Target Name="AfterBuild">
   </Target> -->
 </Project>
+

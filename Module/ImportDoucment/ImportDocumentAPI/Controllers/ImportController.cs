@@ -13,12 +13,18 @@ namespace ImportDocument.ImportApi.Controllers
         [HttpPost, Route("parse")]
         public async Task<IHttpActionResult> Parse(CancellationToken cancellationToken)
         {
-            if (HttpContext.Current.Request.Files.Count == 0) return BadRequest("Vui lÃ²ng chá»n file Excel.");
+            if (HttpContext.Current.Request.Files.Count == 0) return BadRequest("Vui lòng chọn file Excel.");
             var file = HttpContext.Current.Request.Files[0];
             var userId = HttpContext.Current.Request.Form["userId"];
             var documentId = HttpContext.Current.Request.Form["documentId"];
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(documentId)) return BadRequest("Thiáº¿u userId hoáº·c documentId.");
-            var result = await service.ImportAsync(file.InputStream, file.FileName, userId, documentId, cancellationToken);
+            var targetSchemaJson = HttpContext.Current.Request.Form["targetSchemaJson"];
+            var docTypeCode = HttpContext.Current.Request.Form["docTypeCode"];
+            int formIndex;
+            if (!int.TryParse(HttpContext.Current.Request.Form["formIndex"], out formIndex) || formIndex < 0) formIndex = 0;
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(documentId)) return BadRequest("Thiếu userId hoặc documentId.");
+            var result = await service.ImportAsync(
+                file.InputStream, file.FileName, userId, documentId,
+                targetSchemaJson, docTypeCode, formIndex, cancellationToken);
             return Ok(result);
         }
     }

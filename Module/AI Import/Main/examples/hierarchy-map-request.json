@@ -1,0 +1,22 @@
+{
+  "doc_type_code": "04a/TP/PBGDPL",
+  "report_title": "Kết quả công tác phổ biến, giáo dục pháp luật",
+  "form_index": 0,
+  "use_llm": false,
+  "source_indicators": [
+    {"source_ref": "R8", "source_row": 8, "code": "", "label": "Tổng số trên địa bàn tỉnh/thành phố"},
+    {"source_ref": "R9", "source_row": 9, "code": "I", "label": "Tại cấp tỉnh"},
+    {"source_ref": "R10", "source_row": 10, "code": "1", "label": "Cơ quan chuyên môn thuộc UBND cấp tỉnh"},
+    {"source_ref": "R11", "source_row": 11, "code": "1.1", "label": "Sở Tư pháp"},
+    {"source_ref": "R12", "source_row": 12, "code": "II", "label": "Tại cấp xã"},
+    {"source_ref": "R13", "source_row": 13, "code": "1", "label": "UBND cấp xã"}
+  ],
+  "target_indicators": [
+    {"target_ref": "form:0:row:1", "target_row": 1, "code": "", "label": "Tổng số trên địa bàn tỉnh/thành phố"},
+    {"target_ref": "form:0:row:2", "target_row": 2, "code": "I", "label": "Tại cấp tỉnh"},
+    {"target_ref": "form:0:row:3", "target_row": 3, "code": "1", "label": "Cơ quan chuyên môn thuộc UBND cấp tỉnh"},
+    {"target_ref": "form:0:row:4", "target_row": 4, "code": "1.1", "label": "Sở Tư pháp"},
+    {"target_ref": "form:0:row:5", "target_row": 5, "code": "II", "label": "Tại cấp xã"},
+    {"target_ref": "form:0:row:6", "target_row": 6, "code": "1", "label": "UBND cấp xã"}
+  ]
+}

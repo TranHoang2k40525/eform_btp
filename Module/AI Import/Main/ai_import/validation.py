@@ -12,16 +12,20 @@ def _empty(value: Any) -> bool:
     return value is None or (isinstance(value, str) and not value.strip())
 
 
+def _marker(value: Any) -> bool:
+    return isinstance(value, str) and value.strip() in {"-", "–", "—", "...", "…"}
+
+
 def _valid_type(value: Any, data_type: str) -> bool:
-    if _empty(value):
+    if _empty(value) or _marker(value):
         return True
     kind = data_type.lower()
     if kind in {"string", "text"}:
         return True
-    if kind in {"number", "decimal", "integer"}:
+    if kind in {"number", "decimal", "integer", "int", "long"}:
         try:
-            Decimal(str(value).replace(",", ""))
-            return True
+            parsed = Decimal(str(value).replace(",", ""))
+            return kind not in {"integer", "int", "long"} or parsed == parsed.to_integral_value()
         except InvalidOperation:
             return False
     if kind in {"date", "datetime"}:
@@ -53,6 +57,8 @@ class DeterministicValidator:
             for field_id, column in column_map.items():
                 value = row[column] if column < len(row) else None
                 field = fields.get(field_id)
+                if _marker(value):
+                    continue
                 if field and field.required and _empty(value):
                     issues.append(ValidationIssueDto(row=row_index, column=column, field_id=field_id,
                         severity="error", code="REQUIRED_VALUE", message=f"{field.label} là bắt buộc.", value=value))
@@ -65,6 +71,8 @@ class DeterministicValidator:
                 if column is None or rule.field_id in invalid_fields:
                     continue
                 value = row[column] if column < len(row) else None
+                if _marker(value):
+                    continue
                 failed = False
                 if rule.rule_type == "regex" and not _empty(value):
                     failed = re.fullmatch(str(rule.parameters.get("pattern", "")), str(value)) is None

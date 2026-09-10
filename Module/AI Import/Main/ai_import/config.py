@@ -26,6 +26,9 @@ class Settings:
     llm_enabled: bool = _flag("AI_IMPORT_LLM_ENABLED")
     llm_base_url: str = os.getenv("AI_IMPORT_LLM_BASE_URL", "http://127.0.0.1:8001/v1")
     llm_model: str = os.getenv("AI_IMPORT_LLM_MODEL", "Qwen/Qwen3-8B")
+    llm_api_key: str | None = os.getenv("AI_IMPORT_LLM_API_KEY")
+    llm_timeout_seconds: float = float(os.getenv("AI_IMPORT_LLM_TIMEOUT_SECONDS", "45"))
+    llm_max_attempts: int = int(os.getenv("AI_IMPORT_LLM_MAX_ATTEMPTS", "2"))
     auto_accept_threshold: float = float(os.getenv("AI_IMPORT_AUTO_ACCEPT_THRESHOLD", "0.88"))
     review_threshold: float = float(os.getenv("AI_IMPORT_REVIEW_THRESHOLD", "0.62"))
 

@@ -13,6 +13,13 @@ namespace ImportDocument.Application.Dto
         public string UserId { get; set; }
         public string DocumentId { get; set; }
         public object Errors { get; set; }
+        public string SchemaVersion { get; set; }
+        public string ModelVersion { get; set; }
+        public bool Valid { get; set; }
+        public bool RequiresReview { get; set; }
+        public object Columns { get; set; }
+        public object RowMappings { get; set; }
+        public object AiResult { get; set; }
     }
 }
 

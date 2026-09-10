@@ -28,6 +28,15 @@ Tên file raw có dạng `Tên đơn vị_DocTypeCode_Tên biểu.xlsx`. Ví d�
 
 `DocumentContentId` đại diện chỉ là metadata, không phải ID của mọi báo cáo thực tế.
 
+Nếu nguồn là snapshot `text.txt` của hệ thống cũ, tạo catalog bằng:
+
+```powershell
+cd '.\Module\AI Import\Main'
+python -m ai_import.catalog 'C:\Users\hoang\Downloads\text.txt' '..\Data\Labels\eform_fields.jsonl'
+```
+
+Công cụ nhóm theo marker `mẫu <DocTypeCode>` và giữ `form_index` của từng `DocumentContents`. Không ghép DocType với danh sách form theo vị trí, vì các mã như `01d`, `01e`, `10b`, `11b` có nhiều form và sẽ làm lệch mã của mọi form phía sau.
+
 ## 3. Luồng xử lý
 
 ```text
@@ -75,13 +84,15 @@ Notebook lọc field cùng DocTypeCode, so sánh `field_title`, `field_name`, `c
 
 ### Build dataset
 
-Chỉ record có cả hai điều kiện sau mới được dùng train:
+Chỉ record có đủ ba điều kiện sau mới được dùng train:
 
 ```json
-{"verified": true, "target_data_field_id": "field_name_chính_xác"}
+{"verified": true, "verification_method": "human", "target_data_field_id": "field_name_chính_xác"}
 ```
 
-Record chưa xác nhận là `Pending`; cột không nhập có thể đặt `ignore=true`.
+`verification_method` chỉ nhận `human`, `curated` hoặc `reviewed`. Kết quả dò theo template/fuzzy chỉ ghi vào `suggested_data_field_id`, `needs_review=true`; không được tự nâng thành ground truth. Record chưa xác nhận là `Pending`; cột không nhập có thể đặt `ignore=true`.
+
+Mẫu cho quan hệ hàng `Tổng số / I / 1 / 1.1 / II / 1` nằm ở `Data/Samples/hierarchy_mapping_samples.jsonl`. Mỗi sample phải chứa `kind`, `level` và toàn bộ `path`; mã `1` dưới Mục I là hard negative của mã `1` dưới Mục II.
 
 ## 5. Đầu ra
 
@@ -97,7 +108,7 @@ Data/Test/ground_truth.jsonl
 Dataset huấn luyện thường có:
 
 ```json
-{"query":"[DOCTYPE] 01d [HEADER] Tổng số [CODE] (3)","positive":"[FIELD] Số văn bản ...","negative":["[FIELD] Số hồ sơ ..."]}
+{"query":"[DOCTYPE] 01d [HEADER] Tổng số [CODE] (3)","pos":["[FIELD] Số văn bản ..."],"neg":["[FIELD] Số hồ sơ ..."]}
 ```
 
 ## 6. Vì sao Train có thể bằng 0?
@@ -113,11 +124,15 @@ Restart Kernel/Runtime rồi chọn **Run All**. Kiểm tra `Manifest` có DocTy
 - JSONL hợp lệ, không có `sample_id` trùng.
 - DocTypeCode khớp tên file.
 - Không giao workbook giữa Train/Validation/Test.
-- Verified record có `target_data_field_id`.
+- Verified record có `target_data_field_id` và `verification_method` hợp lệ.
+- `header_path` không được chứa sample value, số liệu báo cáo, tên đơn vị báo cáo hoặc ghi chú của bảng trước.
+- Mapping hàng không được đổi cấp `total/section/group/detail` và không được đổi nhánh cha.
 - Không có cùng query nhưng target khác nhau.
 - Mỗi DocType quan trọng có sample.
 
 Chỉ khi `Train`, `Validation`, `Test` đều có dữ liệu verified mới nên chạy `TrainAiImport.ipynb` trên Colab.
+
+`TrainAiImport.ipynb` không ghi đè các split bằng `mappings.jsonl` thô. Notebook chỉ nạp sample đã có `query`/`pos`/`neg`, đối chiếu lại `sample_id` với nhãn người duyệt và đưa tối đa bốn hard-negative vào `MultipleNegativesRankingLoss`.
 
 ## 9. Trạng thái hiện tại
 
@@ -127,7 +142,7 @@ DocTypeCode: 27
 DocumentContent mẫu: 30
 eform_fields: 434
 Mapping candidates: 14.649
-Verified: 0
+Verified tin cậy: 0 (các nhãn auto-verified legacy phải duyệt lại)
 ```
 
-Schema và candidates đã có; training dataset có nhãn vẫn chưa hoàn thành.
+Schema và candidates đã có; training dataset có nhãn người duyệt vẫn chưa hoàn thành. Notebook hiện chặn nhãn legacy thiếu `verification_method` để tránh huấn luyện từ pseudo-label sai.
