@@ -1,0 +1,5 @@
+Server=localhost
+Port=3306
+Database=importai
+User=root
+Password=123456

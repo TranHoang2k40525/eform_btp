@@ -1,6 +1,0 @@
-<Solution>
-  <Project Path="Module/Module.ImportDocument/Application/Module.ImportDocument.Application.csproj" />
-  <Project Path="Module/Module.ImportDocument/Domain/Module.ImportDocument.Domain.csproj" />
-  <Project Path="Module/Module.ImportDocument/Infrastructure/Module.ImportDocument.Infrastructure.csproj" />
-  <Project Path="Module/Module.ImportDocument/ImportApi/Module.ImportDocument.ImportApi.csproj" />
-</Solution>

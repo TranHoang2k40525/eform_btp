@@ -1,0 +1,2 @@
+AiUrl=http://localhost:5005/api/ai/import
+ConnectionString=server=localhost;database=eform;uid=root;pwd=;
