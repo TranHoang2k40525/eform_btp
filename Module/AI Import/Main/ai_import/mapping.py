@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -8,6 +9,14 @@ from rapidfuzz.fuzz import token_set_ratio
 from .config import Settings
 from .models import MapRequest, MapResponse, MappingCandidateDto, TargetFieldDto
 from .text import fold_vietnamese, tokens
+
+
+_DOCTYPE_RE = re.compile(r"(?<!\d)(\d{2}[a-z]?)(?![a-z])", re.IGNORECASE)
+
+
+def _short_doctype(value: str) -> str:
+    match = _DOCTYPE_RE.search(value or "")
+    return match.group(1).lower() if match else ""
 
 
 @dataclass
@@ -73,20 +82,34 @@ class HybridFieldMapper:
         score = 0.38 * fuzzy + 0.34 * path_fuzzy + 0.16 * code_score + 0.12 * overlap
         if source_code and target.column_code and code_score == 0:
             score *= 0.55
-        return _ScoredField(score, target, [
+        reasons = [
             f"leaf={fuzzy:.3f}", f"path={path_fuzzy:.3f}",
             f"code={code_score:.3f}", f"token-overlap={overlap:.3f}",
-        ])
+        ]
+        # Ma cot trong template hien huu la rang buoc deterministic. Day la
+        # fallback tuong thich importer positional cho cac cot ky thuat A/B
+        # co nhan nhu #chitiet, nhung van can DocType/form dung o lop goi.
+        if code_score == 1.0:
+            score = max(score, 0.90)
+            reasons.append("exact-column-code")
+        return _ScoredField(score, target, reasons)
 
     def map(self, request: MapRequest) -> MapResponse:
         result: list[MappingCandidateDto] = []
+        request_doc_type = _short_doctype(request.doc_type_code)
+        target_fields = [
+            field for field in request.target_fields
+            if not request_doc_type
+            or not _short_doctype(field.doc_type_code)
+            or _short_doctype(field.doc_type_code) == request_doc_type
+        ]
         ranked_by_column: dict[int, list[_ScoredField]] = {}
         for column, source in enumerate(request.headers):
             source_path = request.header_paths[column] if column < len(request.header_paths) else [source]
             source_code = request.column_codes[column] if column < len(request.column_codes) else ""
             source_text = " > ".join(source_path) or source
-            scored = [self._lexical(source, source_path, source_code, target) for target in request.target_fields]
-            embedding_scores = self.embedding.score(source_text, request.target_fields)
+            scored = [self._lexical(source, source_path, source_code, target) for target in target_fields]
+            embedding_scores = self.embedding.score(source_text, target_fields)
             for index, item in enumerate(scored):
                 if self.embedding.enabled:
                     semantic = max(0.0, min(1.0, (embedding_scores[index] + 1) / 2))

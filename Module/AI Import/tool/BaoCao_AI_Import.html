@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Báo cáo hoàn thiện công cụ AI Import Excel</title>
+  <style>
+    :root { --ink:#172033; --muted:#5f6b7a; --brand:#1261a0; --soft:#eef6fc; --ok:#176b45; --warn:#9a5b00; --line:#d8e0e8; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Segoe UI,Arial,sans-serif; color:var(--ink); background:#f5f7fa; line-height:1.6; }
+    main { max-width:1080px; margin:32px auto; background:#fff; padding:44px 52px; border:1px solid var(--line); border-radius:16px; box-shadow:0 12px 34px rgba(20,40,70,.08); }
+    h1,h2,h3 { line-height:1.25; color:#103f68; }
+    h1 { margin-top:0; font-size:2rem; }
+    h2 { margin-top:34px; padding-bottom:8px; border-bottom:2px solid var(--soft); }
+    code { padding:2px 6px; border-radius:5px; background:#f1f4f7; overflow-wrap:anywhere; }
+    pre { padding:16px; border-radius:10px; background:#142033; color:#e8f0fa; overflow:auto; }
+    a { color:var(--brand); }
+    table { width:100%; border-collapse:collapse; margin:14px 0; }
+    th,td { border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top; }
+    th { background:var(--soft); }
+    .lead { color:var(--muted); font-size:1.08rem; }
+    .card { margin:16px 0; padding:16px 18px; border-left:5px solid var(--brand); background:var(--soft); border-radius:8px; }
+    .ok { border-left-color:var(--ok); background:#eef9f3; }
+    .warn { border-left-color:var(--warn); background:#fff7e8; }
+    .badge { display:inline-block; padding:3px 9px; color:#fff; background:var(--ok); border-radius:999px; font-size:.85rem; }
+    footer { margin-top:36px; color:var(--muted); font-size:.9rem; }
+    @media print { body{background:#fff} main{margin:0;max-width:none;border:0;box-shadow:none;padding:20px} a{color:inherit;text-decoration:none} }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Báo cáo hoàn thiện công cụ AI Import Excel</h1>
+  <p class="lead">Mục tiêu: chuẩn bị dữ liệu và prompt để AI hiểu cấu trúc chỉ tiêu thống kê; ánh xạ đúng cấp; trả JSON hợp lệ; đồng thời cung cấp quy trình tạo dataset và huấn luyện model có thể chạy lại.</p>
+  <p><span class="badge">Không sửa file C#</span></p>
+
+  <h2>1. Phạm vi khảo sát</h2>
+  <ul>
+    <li>Đã đọc tài liệu Markdown của dự án, tài liệu thiết kế dataset và module AI Import.</li>
+    <li>Đã tham khảo luồng import Excel cũ từ các file JavaScript/HTML/config do hệ thống cung cấp.</li>
+    <li>Chỉ phân tích hai workbook đại diện trong <code>Data/Raw</code>; không quét toàn bộ Raw và không đọc <code>__pycache__</code>.</li>
+    <li>Giữ nguyên toàn bộ mã C#, project .NET và cấu hình tích hợp hiện có.</li>
+  </ul>
+
+  <h2>2. Những phần đã thực hiện</h2>
+  <table>
+    <thead><tr><th>Hạng mục</th><th>Kết quả</th></tr></thead>
+    <tbody>
+      <tr><td>Phân cấp chỉ tiêu</td><td>Nhận diện <code>Tổng số → I/II → 1/2 → 1.1/1.2</code>, dựng <code>kind</code>, <code>level</code>, <code>parent_ref</code> và toàn bộ <code>path</code>.</td></tr>
+      <tr><td>Mục có mã lặp</td><td>Phân biệt mã <code>1</code> dưới Mục I và mã <code>1</code> dưới Mục II bằng ngữ cảnh cha, không so khớp riêng con số.</td></tr>
+      <tr><td>Dòng bất thường</td><td>Không map marker <code>-</code>, <code>...</code>, <code>…</code>; đưa nhãn số thuần nghi lệch cột sang trạng thái review.</td></tr>
+      <tr><td>Ánh xạ</td><td>Ghép một-một, ưu tiên đúng DocType/mã cột/path; không tạo hậu tố ID giả và không dùng trùng target.</td></tr>
+      <tr><td>LLM</td><td>Prompt cấm bịa ID, yêu cầu JSON-only; response được kiểm tra target lạ, thiếu source, trùng target, sai cấp và sai quan hệ cha.</td></tr>
+      <tr><td>Excel/eForm cũ</td><td>Hỗ trợ <code>DocumentContents</code>, <code>FormConfig</code>, <code>DefineConfigJson</code>, <code>SourceData/ValueData</code> và nhiều biểu logic trong cùng sheet.</td></tr>
+      <tr><td>Kiểm thử</td><td>19 test đạt; prompt và JSON Schema lưu file đồng bộ với runtime; không có diff C#.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Gói bàn giao trong thư mục tool</h2>
+  <pre>tool/
+├── BaoCao_AI_Import.html
+├── README.md
+├── 01_BuildDatasetComplete.ipynb
+├── 02_TrainModelFromDataset.ipynb
+├── run-api.ps1
+├── Prompts/
+├── docs/
+└── runtime/
+    ├── ai_import/
+    ├── examples/
+    ├── tests/
+    └── requirements*.txt</pre>
+  <p>Các bản gốc vẫn được giữ tại <code>Main</code>, <code>Prompts</code> và <code>Docs</code> để không làm hỏng đường dẫn mà hệ thống hiện tại đang sử dụng. Bản trong <code>tool</code> là gói giao nhận độc lập.</p>
+
+  <h2>4. File tạo dataset hoàn chỉnh</h2>
+  <div class="card ok">
+    <strong>File phải chạy:</strong> <a href="01_BuildDatasetComplete.ipynb">01_BuildDatasetComplete.ipynb</a>
+  </div>
+  <p>Notebook tự tìm thư mục <code>Module/AI Import</code>, đọc Excel từ <code>../Data/Raw</code>, đọc catalog field từ <code>../Data/Labels/eform_fields.jsonl</code>, và không sửa dữ liệu nguồn. Bản nhãn để làm việc được tạo tại:</p>
+  <pre>tool/work/Labels/mappings.jsonl</pre>
+  <p>Dataset hoàn chỉnh được xuất tại:</p>
+  <pre>tool/artifacts/dataset/Train/train.jsonl
+tool/artifacts/dataset/Validation/validation.jsonl
+tool/artifacts/dataset/Test/test.jsonl
+tool/artifacts/dataset/Test/ground_truth.jsonl</pre>
+
+  <h2>5. Cần làm gì để có dataset đủ điều kiện huấn luyện?</h2>
+  <ol>
+    <li>Đặt workbook <code>.xlsx</code>/<code>.xlsm</code> vào <code>Module/AI Import/Data/Raw</code>; bỏ qua file khóa bắt đầu bằng <code>~$</code>.</li>
+    <li>Chuẩn bị catalog field eForm tại <code>Data/Labels/eform_fields.jsonl</code>. Catalog phải có DocType, DataFieldId, tiêu đề field, mã cột và header path.</li>
+    <li>Chạy notebook <code>01_BuildDatasetComplete.ipynb</code> từ trên xuống để quét cấu trúc header và tạo candidate.</li>
+    <li>Mở <code>tool/work/Labels/mappings.jsonl</code> và duyệt từng dòng. Điền <code>target_data_field_id</code>, <code>target_field_name</code>, <code>target_field_title</code>, <code>target_column_code</code>.</li>
+    <li>Chỉ với nhãn đã kiểm tra thật, đặt <code>verified=true</code> và <code>verification_method</code> thành <code>human</code>, <code>reviewed</code> hoặc <code>curated</code>. Dòng không phải dữ liệu đặt <code>ignore=true</code>.</li>
+    <li>Chạy lại notebook <code>01</code>. Notebook tạo query/positive/hard-negative, chia theo workbook và kiểm tra rò rỉ dữ liệu.</li>
+    <li>Kiểm tra báo cáo thống kê cuối notebook. Phải không có label conflict, các split không giao nhau và test input không chứa đáp án.</li>
+  </ol>
+  <div class="card warn"><strong>Lưu ý:</strong> <code>candidate_fields</code> chỉ là gợi ý. Không đặt <code>verified=true</code> hàng loạt nếu chưa có người kiểm tra, vì model sẽ học lại lỗi ánh xạ.</div>
+  <div class="card"><strong>Trạng thái dữ liệu hiện có:</strong> file mapping nguồn chứa 14.649 candidate, trong đó 87 dòng legacy có target nhưng thiếu <code>verification_method</code>. Notebook chủ động đưa các dòng này về hàng chờ duyệt; nếu chúng thực sự đã được người kiểm tra, cần bổ sung <code>verification_method="human"</code> hoặc <code>"reviewed"</code>.</div>
+
+  <h3>Schema mẫu train</h3>
+  <pre>{
+  "sample_id": "...",
+  "source_file": "workbook.xlsx",
+  "sheet": "Sheet1",
+  "doc_type_code": "04c/TP/PBGDPL",
+  "query": "[DOCTYPE] ...\n[PARENT] ...\n[HEADER] ...\n[CODE] ...",
+  "pos": ["[DOCTYPE] ...\n[FIELD_NAME] ...\n[FIELD] ...\n[CODE] ..."],
+  "neg": ["hard negative 1", "hard negative 2"],
+  "target_data_field_id": "..."
+}</pre>
+
+  <h2>6. File huấn luyện model</h2>
+  <div class="card ok">
+    <strong>File phải chạy sau notebook 01:</strong> <a href="02_TrainModelFromDataset.ipynb">02_TrainModelFromDataset.ipynb</a>
+  </div>
+  <p>Notebook huấn luyện không đọc nhãn thô. Nó chỉ đọc bốn file do notebook <code>01</code> sinh ra, kiểm tra schema và rò rỉ workbook, sau đó fine-tune <code>BAAI/bge-m3</code> bằng query, positive và tối đa bốn hard negative.</p>
+  <ol>
+    <li>Nếu dùng Colab: tải toàn bộ repository lên Drive, mở notebook, đặt <code>RUN_ON_COLAB=True</code> và bật GPU.</li>
+    <li>Nếu chạy local: mở notebook từ repository; đường dẫn được dò tự động. Chỉ dùng <code>MODULE_ROOT_OVERRIDE</code> khi notebook nằm ngoài dự án.</li>
+    <li>Chạy tất cả cell. Notebook dừng an toàn nếu có dưới 20 mẫu train hợp lệ.</li>
+    <li>Model được lưu ở <code>tool/artifacts/model/EFormExcelMapper-v1</code>; metric validation nằm trong <code>training-metrics.json</code>.</li>
+    <li>Sau đánh giá test, cấu hình service bằng biến <code>AI_IMPORT_EMBEDDING_MODEL</code> trỏ tới model đã duyệt.</li>
+  </ol>
+
+  <h2>7. Prompt và JSON contract</h2>
+  <ul>
+    <li><a href="Prompts/hierarchy-mapping-system.txt">Prompt hierarchy mapping</a></li>
+    <li><a href="Prompts/hierarchy-mapping-output.schema.json">JSON Schema đầu ra</a></li>
+    <li><a href="runtime/examples/hierarchy-mapping-samples.jsonl">7 mẫu curated/hard-negative</a></li>
+    <li><a href="runtime/examples/hierarchy-map-request.json">Request mẫu</a></li>
+  </ul>
+  <p>Embedding model học ánh xạ header Excel → DataField. LLM hierarchy mapping vẫn dùng prompt + validator JSON để kiểm soát cấp cha/con; hai lớp bổ trợ nhau và không nên thay thế lẫn nhau.</p>
+
+  <h2>8. Kết quả kiểm chứng hiện tại</h2>
+  <ul>
+    <li><strong>19/19</strong> test Python đạt.</li>
+    <li>Biểu 04b: 19/19 cột auto-map.</li>
+    <li>Biểu 01d form 0: 3/3 cột auto-map.</li>
+    <li>Biểu 01d form 1: 14/14 cột và 2/2 hàng auto-map.</li>
+    <li>Bộ phân cấp 149 dòng 04c: 145 auto, 3 review, 1 marker unmapped.</li>
+    <li>JSON output, prompt/schema sync và Python compile check đều đạt.</li>
+  </ul>
+
+  <footer>Báo cáo được tạo cho module AI Import Excel — ngày 11/09/2026.</footer>
+</main>
+</body>
+</html>

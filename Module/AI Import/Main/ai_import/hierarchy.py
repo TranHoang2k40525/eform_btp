@@ -47,8 +47,8 @@ def classify_indicator(code: object, label: object, has_section: bool = False) -
     text = str(label or "").strip()
     if _MARKER_RE.fullmatch(text) or (raw_code in {"-", "–", "—"} and not text):
         return "marker", 0
-    if _is_total(text):
-        return "total", 0
+    # Ma STT the hien cap manh hon tu khoa trong nhan. Vi du dong ma "1"
+    # co nhan "Tong so ho so..." van la group duoi Muc, khong phai root total.
     if raw_code and _ROMAN_RE.fullmatch(raw_code):
         return "section", 1
     if raw_code and _INTEGER_RE.fullmatch(raw_code):
@@ -57,6 +57,8 @@ def classify_indicator(code: object, label: object, has_section: bool = False) -
         return "detail", (2 if has_section else 1) + raw_code.count(".")
     if raw_code and _ALPHA_RE.fullmatch(raw_code):
         return "detail", 3 if has_section else 2
+    if _is_total(text):
+        return "total", 0
     return "detail", -1
 
 
@@ -252,9 +254,13 @@ class DeterministicHierarchyMapper:
             )
             confidence = max(0.0, min(1.0, 0.90 * pair.score + 0.10 * min(1.0, margin * 2)))
             generic = fold_vietnamese(source.label) in _GENERIC_LABELS
-            safe_generic = not generic or _similarity(
-                " > ".join(source.path[:-1]), " > ".join(pair.target.path[:-1])
-            ) >= 0.90
+            source_parent_path = " > ".join(source.path[:-1])
+            target_parent_path = " > ".join(pair.target.path[:-1])
+            safe_generic = (
+                not generic
+                or (not source_parent_path and not target_parent_path)
+                or _similarity(source_parent_path, target_parent_path) >= 0.90
+            )
             decision = (
                 MappingDecision.auto
                 if confidence >= self.config.auto_accept_threshold and margin >= 0.06 and safe_generic
@@ -263,6 +269,17 @@ class DeterministicHierarchyMapper:
             reason_codes = ["HIERARCHY_MATCH", *pair.reasons, f"margin={margin:.3f}"]
             if generic:
                 reason_codes.append("GENERIC_LABEL_REQUIRES_PARENT")
+            suspected_shift = not _clean_code(source.code) and bool(re.fullmatch(r"[\d.,\s]+", source.label.strip()))
+            if suspected_shift:
+                decision = MappingDecision.review
+                reason_codes.append("SUSPECTED_SHIFTED_VALUE")
+                issues.append(HierarchyIssueDto(
+                    code="SUSPECTED_SHIFTED_VALUE",
+                    severity="warning",
+                    source_ref=source.source_ref,
+                    target_ref=pair.target.target_ref,
+                    message="Nhãn chỉ chứa số nhưng không có mã phân cấp; có thể dữ liệu đã lệch sang cột chỉ tiêu.",
+                ))
             mappings.append(HierarchyMappingDto(
                 source_ref=source.source_ref,
                 target_ref=pair.target.target_ref,
@@ -295,7 +312,7 @@ class DeterministicHierarchyMapper:
             if source.parent_ref:
                 parent_mapping = mapping_by_source.get(source.parent_ref)
                 mapped_parent = parent_mapping.target_ref if parent_mapping else None
-                if mapped_parent and target.parent_ref and mapped_parent != target.parent_ref:
+                if mapped_parent != target.parent_ref:
                     mappings[index] = mappings[index].model_copy(update={
                         "decision": MappingDecision.review,
                         "reason_codes": [*mappings[index].reason_codes, "PARENT_MISMATCH"],
@@ -307,6 +324,18 @@ class DeterministicHierarchyMapper:
                         target_ref=target.target_ref,
                         message="Dòng con không thuộc dòng cha đã ánh xạ; bắt buộc duyệt.",
                     ))
+            elif target.parent_ref:
+                mappings[index] = mappings[index].model_copy(update={
+                    "decision": MappingDecision.review,
+                    "reason_codes": [*mappings[index].reason_codes, "PARENT_MISMATCH"],
+                })
+                issues.append(HierarchyIssueDto(
+                    code="HIERARCHY_PARENT_MISMATCH",
+                    severity="warning",
+                    source_ref=source.source_ref,
+                    target_ref=target.target_ref,
+                    message="Dòng gốc bị ánh xạ vào target có dòng cha; bắt buộc duyệt.",
+                ))
 
         requires_review = any(item.decision != MappingDecision.auto for item in mappings)
         return HierarchyMapResponse(

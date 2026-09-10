@@ -10,7 +10,7 @@ Từ root workspace với Python 3.11:
 cd '.\Module\AI Import\Main'
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m uvicorn ai_import.api:app --host 127.0.0.1 --port 8010
 ```
 
@@ -50,7 +50,7 @@ Xem `.env.example`. Uvicorn không tự đọc file `.env` nếu chưa truyền 
 - Mapping semantic lazy-load model; memory/latency phải benchmark trước rollout.
 - Các rule tổng cột/tổng dòng, required, readonly và marker `-`, `...`, `…` vẫn là rule deterministic như luồng import Excel hiện hữu; không giao cho LLM.
 
-Prompt, dữ liệu mẫu và contract: `Prompts/`, `Main/examples/`, `Data/Samples/` và `../../Docs/AI_HIERARCHY_MAPPING.md`.
+Prompt, dữ liệu mẫu và contract: `Prompts/`, `Main/examples/` và `../../Docs/AI_HIERARCHY_MAPPING.md`. Bản làm việc sinh trong `Data/Samples/` bị loại khỏi Git theo `.gitignore`.
 
 ## Tạo lại catalog field từ snapshot hệ thống cũ
 
@@ -62,3 +62,12 @@ python -m ai_import.catalog 'C:\Users\hoang\Downloads\text.txt' '..\Data\Labels\
 ```
 
 Snapshot hiện tại sinh đúng 434 field từ 30 `DocumentContent`. Catalog này chỉ tạo candidate; không tự đặt `verified=true`.
+
+## Gói tool, dataset và huấn luyện
+
+Bản giao nhận tập trung nằm tại `tool/`, không chứa file C#. Xem `tool/BaoCao_AI_Import.html` hoặc `tool/README.md`.
+
+- Chạy `tool/01_BuildDatasetComplete.ipynb` để tạo dataset đã chia train/validation/test.
+- Duyệt nhãn tại `tool/work/Labels/mappings.jsonl`; chỉ `human`, `reviewed`, `curated` được đưa vào dataset.
+- Chạy `tool/02_TrainModelFromDataset.ipynb` để huấn luyện trên đúng dataset vừa sinh.
+- Dataset và model được ghi dưới `tool/artifacts/`; dữ liệu nguồn trong `Data/` không bị notebook sửa.

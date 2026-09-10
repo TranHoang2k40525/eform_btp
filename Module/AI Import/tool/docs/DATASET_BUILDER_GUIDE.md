@@ -1,4 +1,4 @@
-# DatasetBuilder.ipynb — hướng dẫn chi tiết
+# 01_BuildDatasetComplete.ipynb — hướng dẫn chi tiết
 
 ## 1. Mục đích
 
@@ -13,9 +13,9 @@ Nó không học các giá trị báo cáo như `0`, `12`, `500000`; các giá t
 ## 2. Dữ liệu đầu vào
 
 ```text
-Data/Raw/*.xlsx, *.xlsm
-Data/Labels/eform_fields.jsonl
-Data/Labels/mappings.jsonl (nếu đã có nhãn cũ)
+../Data/Raw/*.xlsx, *.xlsm
+../Data/Labels/eform_fields.jsonl
+work/Labels/mappings.jsonl (bản nhãn làm việc; được seed từ Data nếu có)
 ```
 
 Tên file raw có dạng `Tên đơn vị_DocTypeCode_Tên biểu.xlsx`. Ví dụ `_01d_` được tách thành `01d` bằng regex `_(\d{2}[a-z]?)_`; mã `17` cũng được hỗ trợ.
@@ -68,11 +68,11 @@ Chuẩn hóa text, đọc/ghi JSONL, tạo `sample_id` ổn định và bỏ gi�
 
 ### Cell 7: Manifest
 
-Quét đệ quy `.xlsx/.xlsm`, bỏ file `~$`, tạo `Data/Manifest.jsonl` gồm `file`, `relative_path`, `doc_type_code`, `split`, `enabled`.
+Quét đệ quy `.xlsx/.xlsm`, bỏ file `~$`, tạo `tool/work/Manifest.jsonl` gồm `file`, `relative_path`, `doc_type_code`, `split`, `enabled`.
 
 ### Cell 8: mappings
 
-Parse toàn bộ workbook, ghi `Data/Labels/mappings.jsonl`, đồng thời giữ nhãn cũ theo `sample_id` nếu đã tồn tại.
+Parse toàn bộ workbook, ghi `tool/work/Labels/mappings.jsonl`, đồng thời giữ nhãn cũ theo `sample_id` nếu đã tồn tại.
 
 ### Cell 9: preview
 
@@ -92,17 +92,17 @@ Chỉ record có đủ ba điều kiện sau mới được dùng train:
 
 `verification_method` chỉ nhận `human`, `curated` hoặc `reviewed`. Kết quả dò theo template/fuzzy chỉ ghi vào `suggested_data_field_id`, `needs_review=true`; không được tự nâng thành ground truth. Record chưa xác nhận là `Pending`; cột không nhập có thể đặt `ignore=true`.
 
-Mẫu được kiểm soát phiên bản cho quan hệ hàng `Tổng số / I / 1 / 1.1 / II / 1` nằm ở `Main/examples/hierarchy-mapping-samples.jsonl`; bản làm việc có thể đặt tại `Data/Samples/hierarchy_mapping_samples.jsonl`. Mỗi sample phải chứa `kind`, `level` và toàn bộ `path`; mã `1` dưới Mục I là hard negative của mã `1` dưới Mục II. Bộ mẫu còn có ca từ chối marker và nhãn số thuần nghi lệch cột; tổng cộng 7 sample curated từ cấu trúc `04c` của dữ liệu tham chiếu.
+Mẫu được kiểm soát phiên bản cho quan hệ hàng `Tổng số / I / 1 / 1.1 / II / 1` nằm ở `../runtime/examples/hierarchy-mapping-samples.jsonl`. Mỗi sample phải chứa `kind`, `level` và toàn bộ `path`; mã `1` dưới Mục I là hard negative của mã `1` dưới Mục II. Bộ mẫu còn có ca từ chối marker và nhãn số thuần nghi lệch cột; tổng cộng 7 sample curated từ cấu trúc `04c` của dữ liệu tham chiếu.
 
 ## 5. Đầu ra
 
 ```text
-Data/Manifest.jsonl
-Data/Labels/mappings.jsonl
-Data/Train/train.jsonl
-Data/Validation/validation.jsonl
-Data/Test/test.jsonl
-Data/Test/ground_truth.jsonl
+tool/work/Manifest.jsonl
+tool/work/Labels/mappings.jsonl
+tool/artifacts/dataset/Train/train.jsonl
+tool/artifacts/dataset/Validation/validation.jsonl
+tool/artifacts/dataset/Test/test.jsonl
+tool/artifacts/dataset/Test/ground_truth.jsonl
 ```
 
 Dataset huấn luyện thường có:
@@ -130,9 +130,9 @@ Restart Kernel/Runtime rồi chọn **Run All**. Kiểm tra `Manifest` có DocTy
 - Không có cùng query nhưng target khác nhau.
 - Mỗi DocType quan trọng có sample.
 
-Chỉ khi `Train`, `Validation`, `Test` đều có dữ liệu verified mới nên chạy `TrainAiImport.ipynb` trên Colab.
+Chỉ khi `Train`, `Validation`, `Test` đều có dữ liệu verified mới nên chạy `02_TrainModelFromDataset.ipynb` trên Colab.
 
-`TrainAiImport.ipynb` không ghi đè các split bằng `mappings.jsonl` thô. Notebook chỉ nạp sample đã có `query`/`pos`/`neg`, đối chiếu lại `sample_id` với nhãn người duyệt và đưa tối đa bốn hard-negative vào `MultipleNegativesRankingLoss`.
+`02_TrainModelFromDataset.ipynb` không ghi đè các split bằng `mappings.jsonl` thô. Notebook chỉ nạp sample đã có `query`/`pos`/`neg`, kiểm tra schema/split và đưa tối đa bốn hard-negative vào `MultipleNegativesRankingLoss`.
 
 ## 9. Trạng thái hiện tại
 

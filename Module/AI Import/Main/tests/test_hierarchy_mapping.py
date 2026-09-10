@@ -8,9 +8,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from ai_import.config import settings
 from ai_import.hierarchy import DeterministicHierarchyMapper, enrich_indicators
-from ai_import.llm import LlmOutputError, validate_llm_mapping
+from ai_import.llm import LlmOutputError, parse_json_object, validate_llm_mapping
 from ai_import.models import HierarchyMapRequest, IndicatorDto, TargetIndicatorDto
-from ai_import.prompting import build_hierarchy_messages
+from ai_import.prompting import SYSTEM_PROMPT, build_hierarchy_messages, hierarchy_output_schema
 
 
 class HierarchyMappingTests(unittest.TestCase):
@@ -57,12 +57,30 @@ class HierarchyMappingTests(unittest.TestCase):
         ])
         self.assertEqual(rows[0].kind, "group")
 
+    def test_numbered_total_label_keeps_its_group_level(self):
+        rows = enrich_indicators([
+            IndicatorDto(source_ref="s0", code="", label="Tổng số"),
+            IndicatorDto(source_ref="s1", code="I", label="Mục hồ sơ"),
+            IndicatorDto(source_ref="s2", code="1", label="Tổng số hồ sơ đã tiếp nhận"),
+        ])
+        self.assertEqual(rows[2].kind, "group")
+        self.assertEqual(rows[2].level, 2)
+        self.assertEqual(rows[2].parent_ref, "s1")
+
     def test_prompt_contains_hierarchy_but_not_report_values(self):
         messages = build_hierarchy_messages(self.request)
         prompt = messages[1]["content"]
         self.assertIn('"parent_ref":"s4"', prompt)
         self.assertIn('"path"', prompt)
         self.assertNotIn("sample_values", prompt)
+
+    def test_checked_in_output_schema_matches_runtime_contract(self):
+        schema_path = Path(__file__).resolve().parents[2] / "Prompts" / "hierarchy-mapping-output.schema.json"
+        self.assertEqual(json.loads(schema_path.read_text(encoding="utf-8")), hierarchy_output_schema())
+
+    def test_checked_in_system_prompt_matches_runtime_prompt(self):
+        prompt_path = Path(__file__).resolve().parents[2] / "Prompts" / "hierarchy-mapping-system.txt"
+        self.assertEqual(prompt_path.read_text(encoding="utf-8").strip(), SYSTEM_PROMPT.strip())
 
     def test_rejects_unknown_llm_target(self):
         output = {
@@ -74,6 +92,12 @@ class HierarchyMappingTests(unittest.TestCase):
         }
         with self.assertRaises(LlmOutputError):
             validate_llm_mapping(self.request, json.dumps(output))
+
+    def test_rejects_explanatory_text_outside_json(self):
+        with self.assertRaises(LlmOutputError):
+            parse_json_object('Kết quả: {"schema_version":"1.0","mappings":[]}')
+        with self.assertRaises(LlmOutputError):
+            parse_json_object('{"schema_version":"1.0","mappings":[]} xong')
 
     def test_rejects_llm_level_confusion(self):
         output = {

@@ -73,6 +73,63 @@ class SchemaAndColumnMappingTests(unittest.TestCase):
         self.assertEqual(len({item.target_field_id for item in result.mappings}), 2)
         json.loads(result.model_dump_json())
 
+    def test_exact_structural_column_code_preserves_current_importer_contract(self):
+        result = HybridFieldMapper(settings).map(MapRequest(
+            headers=["II. SỐ VĂN BẢN ĐÃ BAN HÀNH"],
+            header_paths=[["II. SỐ VĂN BẢN ĐÃ BAN HÀNH"]],
+            column_codes=["A"],
+            doc_type_code="01d",
+            target_fields=[TargetFieldDto(
+                field_id="chitiet_a",
+                field_name="chitiet_a",
+                label="#chitiet - A",
+                column_code="A",
+                doc_type_code="01d",
+            )],
+        ))
+        self.assertEqual(result.mappings[0].target_field_id, "chitiet_a")
+        self.assertEqual(result.mappings[0].decision, "auto")
+
+    def test_declared_target_from_other_doc_type_is_not_mapped_by_code_only(self):
+        result = HybridFieldMapper(settings).map(MapRequest(
+            headers=["Tổng số"],
+            column_codes=["(1)"],
+            doc_type_code="04b",
+            target_fields=[TargetFieldDto(
+                field_id="wrong",
+                label="Tổng số",
+                column_code="(1)",
+                doc_type_code="02b",
+            )],
+        ))
+        self.assertEqual(result.mappings[0].decision, "unmapped")
+
+    def test_chitiet_first_column_does_not_use_numeric_value_column_as_hierarchy_code(self):
+        form_config = {
+            "header": {
+                "chitiet_a!!#chitiet - A": "string",
+                "tongso!!Tổng số": "int",
+                "loaivanban!!Loại văn bản": "int",
+            },
+            "extra": {"headerSetting": [["A", "(1)", "(2)"]], "columnSetting": {}},
+        }
+        rows = [
+            {"chitiet_a": "Tổng số văn bản", "tongso": 1, "loaivanban": 1},
+            {"chitiet_a": "Trong đó: văn bản cấp xã", "tongso": 0, "loaivanban": 0},
+        ]
+        payload = {
+            "DocTypeCode": "01d",
+            "DocumentContents": [{
+                "FormConfig": json.dumps(form_config, ensure_ascii=False),
+                "SourceData": json.dumps(rows, ensure_ascii=False),
+            }],
+        }
+        parsed = parse_target_schema(json.dumps(payload, ensure_ascii=False))
+        self.assertEqual([item.code for item in parsed.indicators], ["", ""])
+        self.assertEqual([item.label for item in parsed.indicators], [
+            "Tổng số văn bản", "Trong đó: văn bản cấp xã"
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()

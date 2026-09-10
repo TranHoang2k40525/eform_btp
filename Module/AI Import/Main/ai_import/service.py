@@ -104,22 +104,43 @@ class ImportAiService:
                 continue
             llm_item = llm_by_source[source.source_ref]
             if llm_item.target_ref is None:
-                mappings.append(base.model_copy(update={
-                    "target_ref": None,
-                    "confidence": llm_item.confidence,
-                    "decision": MappingDecision.unmapped,
-                    "reason_codes": ["LLM_UNMAPPED", "STRUCTURE_VALIDATED"],
-                }))
+                if base.decision == MappingDecision.auto and base.target_ref:
+                    mappings.append(base.model_copy(update={
+                        "decision": MappingDecision.review,
+                        "reason_codes": [*base.reason_codes, "LLM_UNMAPPED_DISAGREEMENT"],
+                    }))
+                    issues.append(HierarchyIssueDto(
+                        code="LLM_BASELINE_DISAGREEMENT",
+                        severity="warning",
+                        source_ref=source.source_ref,
+                        target_ref=base.target_ref,
+                        message="LLM bỏ trống ánh xạ đã được baseline chọn; giữ candidate và bắt buộc duyệt.",
+                    ))
+                else:
+                    mappings.append(base.model_copy(update={
+                        "target_ref": None,
+                        "confidence": llm_item.confidence,
+                        "decision": MappingDecision.unmapped,
+                        "reason_codes": ["LLM_UNMAPPED", "STRUCTURE_VALIDATED"],
+                    }))
                 continue
             confirmed = base.target_ref == llm_item.target_ref
             confidence = min(llm_item.confidence, base.confidence + (0.05 if confirmed else 0.0))
             decision = (
                 MappingDecision.auto
-                if confirmed and confidence >= self.config.auto_accept_threshold
+                if confirmed
+                and base.decision == MappingDecision.auto
+                and confidence >= self.config.auto_accept_threshold
                 else MappingDecision.review
             )
             reason_codes = ["LLM_STRUCTURED_OUTPUT", "STRUCTURE_VALIDATED"]
-            reason_codes.append("DETERMINISTIC_CONFIRMED" if confirmed else "LLM_DIFFERS_FROM_BASELINE")
+            if confirmed:
+                reason_codes.extend(base.reason_codes)
+                reason_codes.append("DETERMINISTIC_CONFIRMED")
+            else:
+                reason_codes.append("LLM_DIFFERS_FROM_BASELINE")
+            if confirmed and base.decision != MappingDecision.auto:
+                reason_codes.append("BASELINE_REVIEW_PRESERVED")
             if not confirmed:
                 issues.append(HierarchyIssueDto(
                     code="LLM_BASELINE_DISAGREEMENT",

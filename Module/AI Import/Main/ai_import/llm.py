@@ -37,16 +37,15 @@ def parse_json_object(content: Any) -> dict[str, Any]:
         lines = text.splitlines()
         if len(lines) >= 3:
             text = "\n".join(lines[1:-1]).strip()
-    first = text.find("{")
-    if first < 0:
-        raise LlmOutputError("Không tìm thấy JSON object trong output LLM.")
+    if not text.startswith("{"):
+        raise LlmOutputError("Output LLM có nội dung thừa trước JSON object.")
     try:
-        value, end = json.JSONDecoder().raw_decode(text[first:])
+        value, end = json.JSONDecoder().raw_decode(text)
     except json.JSONDecodeError as exc:
         raise LlmOutputError(f"JSON LLM không hợp lệ: {exc.msg}.") from exc
     if not isinstance(value, dict):
         raise LlmOutputError("Output LLM phải là một JSON object.")
-    if text[first + end:].strip() not in {"", "```"}:
+    if text[end:].strip():
         raise LlmOutputError("Output LLM có nội dung thừa sau JSON object.")
     return value
 
@@ -91,8 +90,12 @@ def validate_llm_mapping(request: HierarchyMapRequest, raw: Any) -> LlmHierarchy
             )
         if source.parent_ref:
             mapped_parent = mapping_by_source.get(source.parent_ref)
-            if mapped_parent and target.parent_ref and mapped_parent != target.parent_ref:
+            if not mapped_parent:
+                raise LlmOutputError(f"LLM map dòng con nhưng bỏ trống dòng cha tại {source.source_ref}.")
+            if mapped_parent != target.parent_ref:
                 raise LlmOutputError(f"LLM nhầm nhánh cha/con tại {source.source_ref}.")
+        elif target.parent_ref:
+            raise LlmOutputError(f"LLM map dòng gốc vào target có dòng cha tại {source.source_ref}.")
     return response
 
 

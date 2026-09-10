@@ -28,10 +28,10 @@ class CellDto(StrictDto):
 class IndicatorDto(StrictDto):
     """Một dòng chỉ tiêu đã giữ nguyên mã cấp và đường dẫn cha/con."""
 
-    source_ref: str
+    source_ref: str = Field(min_length=1)
     source_row: int | None = None
     code: str = ""
-    label: str
+    label: str = Field(min_length=1)
     kind: str = "detail"
     level: int = Field(default=0, ge=0, le=12)
     parent_ref: str | None = None
@@ -39,10 +39,10 @@ class IndicatorDto(StrictDto):
 
 
 class TargetIndicatorDto(StrictDto):
-    target_ref: str
+    target_ref: str = Field(min_length=1)
     target_row: int | None = None
     code: str = ""
-    label: str
+    label: str = Field(min_length=1)
     kind: str = "detail"
     level: int = Field(default=0, ge=0, le=12)
     parent_ref: str | None = None
@@ -272,8 +272,8 @@ class HierarchyMapResponse(StrictDto):
 
 
 class LlmHierarchyMappingDto(StrictDto):
-    source_ref: str
-    target_ref: str | None
+    source_ref: str = Field(min_length=1)
+    target_ref: str | None = Field(min_length=1)
     confidence: float = Field(ge=0, le=1)
 
 

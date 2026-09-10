@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Báo cáo thực tập tuần 3</title>
+<style>body{font-family:Arial,sans-serif;line-height:1.5;margin:2.5cm}h1{text-align:center;font-size:20pt}h2{color:#1f4e79;font-size:15pt}h3{color:#333;font-size:12pt}table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #777;padding:6px}th{background:#d9eaf7}code,pre{background:#f3f3f3;padding:6px;font-family:Consolas}</style></head>
+<body>
+<h1>BÁO CÁO THỰC TẬP TUẦN 3</h1>
+<p><b>Dự án:</b> eForm BTP – AI-assisted Excel Import</p><p><b>Nội dung:</b> Xây dựng Backend .NET MVC/Web API, bóc tách Excel thành JSON phẳng và quản lý mã nguồn bằng Git.</p>
+<h2>1. Mục tiêu tuần</h2><ul><li>Xây dựng API tiếp nhận file Excel thô.</li><li>Gọi module AI/mô phỏng AI và nhận JSON.</li><li>Bóc tách bảng biểu phức tạp thành JSON phẳng.</li><li>Lưu kết quả vào MySQL bằng Entity Framework.</li><li>Cấu hình Swagger và quản lý mã nguồn Git.</li></ul>
+<h2>2. Kiến trúc Backend</h2><pre>ImportDocument.Domain
+ImportDocument.Application
+ImportDocument.Infrastructure
+ImportDocumentAPI</pre><p>Domain chứa entity và interface repository; Application chứa DTO, service và nghiệp vụ; Infrastructure chứa DbContext, cấu hình EF, repository và MySQL; ImportDocumentAPI chứa Web API, MVC, DI Ninject và Swagger.</p>
+<h2>3. API import Excel</h2><p><b>Endpoint:</b> POST /api/import/parse</p><table><tr><th>Tham số</th><th>Kiểu</th><th>Bắt buộc</th><th>Mô tả</th></tr><tr><td>file</td><td>File</td><td>Có</td><td>Excel .xlsx/.xls</td></tr><tr><td>userId</td><td>String</td><td>Có</td><td>Mã người dùng</td></tr><tr><td>documentId</td><td>String</td><td>Có</td><td>Mã document</td></tr></table>
+<p>Quy trình: FE gửi multipart/form-data → Controller validate → ImportService gọi AI → chuẩn hóa JSON phẳng → Repository lưu MySQL → Controller trả JSON cho FE.</p>
+<h2>4. Kết quả JSON</h2><pre>{
+  "Success": true,
+  "Message": "Bóc tách và lưu dữ liệu thành công.",
+  "FileName": "Template_10_TH_CC.xlsx",
+  "Sheets": ["MockAI"],
+  "Data": [{"stt_a":"","chitiet_b":"Tổng số trên địa bàn tỉnh/thành phố","ketquahoatdong":682}],
+  "RowCount": 107, "ErrorCount": 0,
+  "UserId": "121", "DocumentId": "121212"
+}</pre>
+<h2>5. Validate và lưu dữ liệu</h2><p>Thiếu file hoặc thiếu userId/documentId sẽ trả HTTP 400. Thành công trả HTTP 200. Entity ImportRecord gồm Id, DocumentId, UserId, FileName, JsonData và CreatedAt; dữ liệu được lưu vào bảng import_records trong database importai bằng SaveChangesAsync.</p>
+<h2>6. Swagger</h2><p>Swagger chuẩn dùng Swashbuckle, truy cập tại <b>http://hoang.dev.com/swagger</b>. Giao diện có Choose File, userId và documentId. Ảnh Swagger cho thấy request multipart thành công và trả HTTP 200 với dữ liệu JSON.</p>
+<h2>7. Quản lý mã nguồn Git</h2><p>Mã nguồn AI được quản lý tại repository GitHub eform_btp; hệ thống eForm gốc được tham chiếu từ GitLab Eform Solution 2.0. Quy trình: chỉnh sửa → build/kiểm tra → git add → commit theo chức năng → push → tạo Pull/Merge Request.</p>
+<h2>8. Đối chiếu hệ thống cũ</h2><table><tr><th>Hệ thống cũ</th><th>Module AI mới</th></tr><tr><td>FE tự xử lý nhiều quy tắc Excel</td><td>Backend điều phối xử lý và AI mapping</td></tr><tr><td>Phụ thuộc cấu hình cột thủ công</td><td>AI nhận diện/mapping field</td></tr><tr><td>Khó kiểm thử độc lập</td><td>Có API và Swagger riêng</td></tr><tr><td>Dữ liệu phân tán</td><td>Lưu ImportRecord tập trung trong MySQL</td></tr></table>
+<h2>9. Kết quả và kế hoạch tiếp theo</h2><ul><li>Hoàn thành API nhận Excel, JSON phẳng, MySQL và Swagger.</li><li>Build và chạy được trên IIS.</li><li>AI hiện dùng response mô phỏng; bước tiếp theo thay bằng cổng AI thật.</li><li>Bổ sung đọc trực tiếp nhiều sheet, xác thực eForm và test tự động.</li></ul>
+<h2>10. Minh chứng</h2><p>Swagger: C:\Users\hoang\Downloads\swagger.png<br>GitLab: gitlab_duan_chinh.png, gitlab_duan_eform_chính.png<br>GitHub: Github_ai.png</p><p><b>Đánh giá:</b> Hoàn thành mục tiêu tuần 3 về Backend, bóc tách JSON và quản lý mã nguồn Git.</p>
+</body></html>

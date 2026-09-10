@@ -111,19 +111,29 @@ def _indicator_columns(fields: list[TargetFieldDto], rows: list[dict[str, Any]])
     keys = [item.field_name or item.field_id for item in fields]
     titles = {item.field_name or item.field_id: fold_vietnamese(item.label) for item in fields}
 
-    marker_key = next((key for key in keys if "stt" in fold_vietnamese(key) or titles.get(key) in {"stt", "so thu tu"}), None)
+    label_terms = ("chitiet", "chi tiet", "noi dung", "ten don vi", "phan theo", "chi tieu")
+    label_key = next(
+        (key for key in keys if any(term in (fold_vietnamese(key) + " " + titles.get(key, "")) for term in label_terms)),
+        None,
+    )
+
+    marker_key = next((
+        key for key in keys
+        if re.search(r"(?:^|\s)stt(?:\s|$)", fold_vietnamese(key) + " " + titles.get(key, ""))
+        or "so thu tu" in titles.get(key, "")
+    ), None)
     if marker_key is None:
-        for key in keys[:3]:
+        # Khi field chi tiet nam o cot dau (vi du chitiet_a), cac cot so lieu
+        # phia sau khong duoc bi nham thanh ma phan cap chi vi chua 0/1.
+        marker_candidates = keys[: keys.index(label_key)] if label_key in keys else keys[:3]
+        for key in marker_candidates:
             values = [_clean(row.get(key)) for row in rows if _clean(row.get(key))]
             if values and sum(bool(_INDICATOR_CODE_RE.fullmatch(value)) for value in values) / len(values) >= 0.70:
                 marker_key = key
                 break
 
-    label_terms = ("chi tiet", "noi dung", "ten don vi", "phan theo", "chi tieu")
-    label_key = next(
-        (key for key in keys if key != marker_key and any(term in (fold_vietnamese(key) + " " + titles.get(key, "")) for term in label_terms)),
-        None,
-    )
+    if label_key == marker_key:
+        label_key = None
     if label_key is None and marker_key in keys:
         marker_index = keys.index(marker_key)
         label_key = keys[marker_index + 1] if marker_index + 1 < len(keys) else None

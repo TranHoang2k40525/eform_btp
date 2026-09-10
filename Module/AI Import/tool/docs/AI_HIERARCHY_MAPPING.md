@@ -36,7 +36,7 @@ LLM chỉ trả:
 }
 ```
 
-Contract đầy đủ ở `Module/AI Import/Prompts/hierarchy-mapping-output.schema.json`. Server từ chối output nếu:
+Contract đầy đủ của gói tool ở `../Prompts/hierarchy-mapping-output.schema.json`. Server từ chối output nếu:
 
 - JSON lỗi, có field thừa hoặc text thừa;
 - thiếu/thừa/trùng `source_ref`;
@@ -68,7 +68,7 @@ cd '.\Module\AI Import\Main'
 python -m pytest -q
 ```
 
-File request mẫu: `Module/AI Import/Main/examples/hierarchy-map-request.json`.
+File request mẫu: `../runtime/examples/hierarchy-map-request.json`.
 
 Kết quả kiểm chứng ngày 10/09/2026, chỉ dùng hai workbook Raw theo phạm vi rà soát:
 
