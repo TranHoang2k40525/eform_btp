@@ -1,1 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net48</TargetFramework><RootNamespace>EForm.ImportDocument.Application</RootNamespace><LangVersion>latest</LangVersion></PropertyGroup><ItemGroup><ProjectReference Include="..\EForm.ImportDocument.Domain\EForm.ImportDocument.Domain.csproj" /></ItemGroup></Project>

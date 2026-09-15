@@ -1,73 +1,172 @@
-# AI Import service
+# Dataset nhận diện vùng bảng Excel
 
-FastAPI service phân tích workbook, phát hiện bảng/header, ánh xạ field hybrid, ánh xạ dòng chỉ tiêu phân cấp và validation deterministic. Service không kết nối database eForm.
+Dự án này chuẩn bị dữ liệu và huấn luyện **một model nhận diện vùng bảng** trong file Excel.
+Model không sinh nội dung, không đối chiếu biểu, không mapping vào Document và không cần
+`DocType`, `DataField`, `DocumentContent` hay LLM.
 
-## Chạy baseline
+Đầu ra của model cho mỗi bảng chỉ gồm năm tọa độ:
 
-Từ root workspace với Python 3.11:
-
-```powershell
-cd '.\Module\AI Import\Main'
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements-dev.txt
-python -m uvicorn ai_import.api:app --host 127.0.0.1 --port 8010
+```json
+{"top": 2, "left": 1, "bottom": 8, "right": 13, "header_bottom": 7}
 ```
 
-Mở `/docs`, `/health`, `/model/version`. Các endpoint nghiệp vụ:
+Sau khi mạng neural tìm được vùng, gói model đọc trực tiếp header, value, công thức, style và
+merge từ workbook gốc. Kết quả `predict_excel()` đã đầy đủ để backend trả cho giao diện;
+model không có cơ hội tự bịa hoặc sửa số liệu. Runtime còn trả `columns[].headerPath` và
+`columnCode` để giao diện giữ đúng quan hệ cột cha, cột con.
 
-- `POST /map`: ánh xạ cột bằng full `header_path` + mã cột, không chỉ dùng nhãn lá như `Tổng số`.
-- `POST /hierarchy/prompt`: xem đúng prompt và JSON Schema gửi LLM.
-- `POST /hierarchy/map`: ánh xạ hàng `Tổng số → Mục I/II → 1/2 → 1.1/1.2`.
-- `POST /parse`: phân tích workbook, trả JSON chuẩn `schema_version=1.0`, `columns`, `row_mappings`, `rows`, `issues`.
+## Cách tạo dataset
 
-`target_schema_json` của `/parse` nhận được cả danh sách `fields` chuẩn hóa và document eForm hiện hữu có `DocumentContents[].FormConfig|FormCode`, `DefineConfigJson`, `SourceData|ValueData`. `form_index` chọn đúng biểu trong document nhiều biểu. Chỉ bind public sau khi có reverse proxy, authentication/service isolation và TLS phù hợp.
+1. Đặt các file `.xlsx`/`.xlsm` vào `Data/Raw`.
+2. Mở `BuildDataset.ipynb` bằng kernel Python 3.14.7.
+3. Chọn **Run All**.
 
-## Bật embedding
+Notebook tự kiểm tra/cài `openpyxl`, tạo nhãn, chia tập, thêm augmentation và kiểm tra chất
+lượng. Sau khi chạy xong chỉ có hai artifact cần dùng:
 
-```powershell
-pip install -r requirements-embedding.txt
-$env:AI_IMPORT_EMBEDDING_ENABLED='true'
-$env:AI_IMPORT_EMBEDDING_MODEL='intfloat/multilingual-e5-base'
-python -m uvicorn ai_import.api:app --host 127.0.0.1 --port 8010
+Cuối notebook có preview trực quan lấy một mẫu từ validation, train, test-id và test-ood.
+Preview đọc value/merge trực tiếp từ Raw để mô phỏng kết quả hiển thị nhưng không lưu các
+value này vào dataset.
+
+```text
+Data/
+├── Raw/                    # workbook gốc, không bị sửa
+├── dataset.jsonl           # tham chiếu file + nhãn vùng bảng + split + augmentation recipe
+└── dataset_report.json     # thống kê và kết quả kiểm tra
 ```
 
-Lần đầu tải model cần mạng. Production trỏ vào artifact nội bộ bất biến.
+Mã tạo dataset nằm trong `dataset_builder.py`; dependency duy nhất nằm trong
+`requirements.txt`.
 
-## Test bằng Swagger/curl
+## Train model
 
-Swagger nội bộ ở `http://127.0.0.1:8010/docs`; kiểm tra `GET /health`, `GET /model/version` và `POST /parse`. API backend Web API dùng Swagger UI `/swagger/ui/index`.
+Chỉ có hai notebook train và một file lõi dùng chung:
 
-## Cấu hình
-
-Xem `.env.example`. Uvicorn không tự đọc file `.env` nếu chưa truyền `--env-file`; production nên cấu hình biến môi trường qua service manager. `AI_IMPORT_LLM_ENABLED` mặc định `false`. Khi bật, LLM chỉ đề xuất ánh xạ hàng phân cấp bằng structured output. Kết quả luôn qua JSON Schema và hậu kiểm deterministic: ID phải thuộc schema, one-to-one, đúng `kind`, `level` và `parent_ref`. Output lỗi sẽ bị loại và service tự dùng baseline deterministic.
-
-## Giới hạn hiện tại
-
-- `.xls` legacy không được parse; phải chuyển đổi trong tiến trình sandbox được phê duyệt.
-- Region detector là heuristic và luôn cần manual fallback cho confidence thấp.
-- Validation module hỗ trợ rule cơ bản; rule cross-document/cross-form vẫn do eForm xử lý.
-- Mapping semantic lazy-load model; memory/latency phải benchmark trước rollout.
-- Các rule tổng cột/tổng dòng, required, readonly và marker `-`, `...`, `…` vẫn là rule deterministic như luồng import Excel hiện hữu; không giao cho LLM.
-
-Prompt, dữ liệu mẫu và contract: `Prompts/`, `Main/examples/` và `../../Docs/AI_HIERARCHY_MAPPING.md`. Bản làm việc sinh trong `Data/Samples/` bị loại khỏi Git theo `.gitignore`.
-
-## Tạo lại catalog field từ snapshot hệ thống cũ
-
-Không được ghép danh sách DocType với danh sách `FormConfig` theo vị trí: một DocType có thể có nhiều `DocumentContents`, làm lệch toàn bộ mã biểu phía sau. Công cụ dưới đây tách từng block `mẫu <DocTypeCode>` và giữ `form_index`:
-
-```powershell
-cd '.\Module\AI Import\Main'
-python -m ai_import.catalog 'C:\Users\hoang\Downloads\text.txt' '..\Data\Labels\eform_fields.jsonl'
+```text
+Train/
+├── train.ipynb             # bản Windows; tự dùng Python 3.12 + PyTorch CPU
+├── train_colab.ipynb       # bản Google Colab GPU
+└── training_core.py        # model, DataLoader, metric, export và predict_excel()
 ```
 
-Snapshot hiện tại sinh đúng 434 field từ 30 `DocumentContent`. Catalog này chỉ tạo candidate; không tự đặt `verified=true`.
+- Máy cá nhân: mở `Train/train.ipynb` bằng kernel Python 3.14.7 và chọn **Run All**.
+  Notebook tự tạo `Train/.venv` Python 3.12 vì PyTorch Windows chưa hỗ trợ Python 3.14.
+- Colab: chỉ cần đặt toàn bộ `Data` tại `MyDrive/Data`, tải `train_colab.ipynb` lên Colab,
+  chọn GPU và **Run All**. Notebook đã nhúng sẵn lõi train và tự kiểm tra checksum trước khi
+  chạy; không cần chép thêm file Python lên Drive.
 
-## Gói tool, dataset và huấn luyện
+Cell cấu hình đầu tiên của mỗi notebook cho phép chỉnh `EPOCHS`, `BATCH_SIZE`, learning
+rate, weight decay, patience, độ lớn model, trọng số ba lớp, thiết bị, worker và các ngưỡng
+hậu xử lý. Bản Colab đối chiếu đủ mọi `source_file` trong `dataset.jsonl` với MyDrive trước
+khi bắt đầu train và xử lý cả khác biệt chuẩn hóa Unicode trong tên workbook.
 
-Bản giao nhận tập trung nằm tại `tool/`, không chứa file C#. Xem `tool/BaoCao_AI_Import.html` hoặc `tool/README.md`.
+Hai bản đều train theo batch/epoch, early stopping theo validation, đánh giá riêng Test-ID và
+Test-OOD, vẽ loss/F1/IoU, chọn ngẫu nhiên file test để so sánh kết quả mong đợi với thực tế,
+sau đó nạp lại artifact và chạy `predict_excel()`.
 
-- Chạy `tool/01_BuildDatasetComplete.ipynb` để tạo dataset đã chia train/validation/test.
-- Duyệt nhãn tại `tool/work/Labels/mappings.jsonl`; chỉ `human`, `reviewed`, `curated` được đưa vào dataset.
-- Chạy `tool/02_TrainModelFromDataset.ipynb` để huấn luyện trên đúng dataset vừa sinh.
-- Dataset và model được ghi dưới `tool/artifacts/`; dữ liệu nguồn trong `Data/` không bị notebook sửa.
+Model thành công có tên:
+
+```text
+eform_excel_table_extractor_v1.eformmodel
+```
+
+Artifact là một file chứa trọng số, cấu hình feature/model, phiên bản dataset, tham số train và
+metric. Các file báo cáo/đồ thị nằm trong `Output_Local` hoặc `Output_Colab` tương ứng.
+
+## Một dòng dataset
+
+Các trường cần thiết:
+
+- `source_file`, `sheet_index`: tìm sheet gốc để tạo tensor/feature khi train.
+- `workbook_id`, `layout_group`: chống rò rỉ giữa bản sao và đo khả năng tổng quát.
+- `sheet_shape`: kích thước sheet.
+- `tables`: ground truth gồm `top`, `left`, `bottom`, `right`, `header_bottom`.
+- `split`: `train`, `validation`, `test_id` hoặc `test_ood`.
+- `augmentation_recipes`: phép dịch hàng/cột, bỏ ngẫu nhiên style/header text; không tạo số
+  liệu giả và chỉ gắn cho train.
+- `annotation`: nguồn và độ tin cậy của nhãn để kiểm soát chất lượng.
+
+Dataset JSONL không chứa value của các ô và không có DocType. Khi train, hàm
+`encode_record(...)` đọc workbook theo yêu cầu rồi biến số, ngày, công thức thành token kiểu
+dữ liệu. Text header được chuẩn hóa; các tọa độ nhãn được dịch đúng theo augmentation.
+
+## Nguyên tắc an toàn và đánh giá
+
+- File trùng hoàn toàn được nhận diện bằng SHA-256 và chỉ giữ một workbook canonical.
+- Cùng workbook luôn nằm trong một split.
+- `test_ood` không chia sẻ `layout_group` với train/validation/test-id.
+- `test_id` đo file mới có bố cục quen thuộc; `test_ood` đo bố cục chưa xuất hiện khi train.
+- Augmentation chỉ thay vị trí, mức dùng style hoặc che một phần header; không thay value.
+- Trường hợp chuẩn `21a` đã được neo nhãn chính xác `A2:M8`, header kết thúc ở hàng 7.
+
+Nhãn còn lại được tự động hóa từ cấu trúc workbook nên `ready_for_training=true` có nghĩa là
+dataset hợp lệ về kỹ thuật, không phải lời cam kết độ chính xác model. Trước khi triển khai cần
+đánh giá riêng trên `test_id` và `test_ood`; không chỉnh nhãn theo kết quả test.
+
+## Ranh giới trách nhiệm khi chạy thật
+
+```text
+Excel gốc
+  -> encoder che giá trị thật
+  -> model dự đoán 5 tọa độ
+  -> kiểm tra tọa độ hợp lệ
+  -> code đọc nguyên văn header/value/merge từ Excel gốc
+  -> Handsontable preview
+  -> người dùng bấm “Nhập dữ liệu”
+  -> giao diện cũ xử lý mapping/check nghiệp vụ
+```
+
+## Chạy FastAPI và giao diện tích hợp
+
+FastAPI nằm trong `API/main.py`. Model được nạp đúng một lần khi service khởi động, sau đó
+mỗi request chỉ chạy inference và đọc lại giá trị từ workbook tạm. API không nhận đường dẫn
+file từ client, không cần DocType, DocumentContent hoặc schema biểu đích.
+
+Lần đầu, cài ba dependency web vào đúng môi trường PyTorch hiện có:
+
+```powershell
+$env:UV_CACHE_DIR = Join-Path (Get-Location) ".uv-cache"
+uv pip install --python ".\Train\.venv\Scripts\python.exe" fastapi uvicorn python-multipart
+```
+
+Khởi động model service:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\API\run_local.ps1"
+```
+
+Các endpoint:
+
+- `GET http://127.0.0.1:8010/health`: trạng thái service và model đang nạp.
+- `GET http://127.0.0.1:8010/api/eform/model`: thông tin artifact.
+- `POST http://127.0.0.1:8010/api/eform/extract`: multipart field `file`, trả workbook preview.
+
+Backend .NET Framework tại `Module/ImportDoucment` gọi endpoint extract bằng multipart và
+trả nguyên `aiResult` cho trình duyệt qua `POST /api/import/parse`. Backend không còn yêu cầu
+`targetSchemaJson`, `docTypeCode`, `formIndex`, không lưu database ở bước preview và không
+mapping dữ liệu.
+
+Mở solution `ImportDoucment.sln`, đặt `ImportDocumentAPI` làm startup project rồi chạy. Trang
+chủ hiển thị Handsontable cục bộ, không phụ thuộc CDN. Bảng mở theo toàn bộ số dòng và dùng
+thanh cuộn ngoài của trang; các dòng tiêu đề bám mép trên khi cuộn tới và mỗi ô tiêu đề được
+giới hạn hai dòng ở lần render đầu. Nội dung đầy đủ vẫn nằm trong tooltip. Khi người dùng bấm
+`Nhập dữ liệu`, giao diện phát sự kiện `eform:ai-import-confirmed` với hai phần:
+
+- `detail.selected`: sheet và vùng bảng đang chọn, gồm data, mergeCells, headerRows, columns.
+- `detail.workbook`: toàn bộ kết quả từ model để hệ thống chính có thể xử lý nhiều sheet/bảng.
+
+Có thể truyền `window.eformImportContext` trước khi nạp script để nối vào màn hình eForm thật:
+
+```javascript
+window.eformImportContext = {
+    userId: currentUserId,
+    documentId: currentDocumentId,
+    templateUrl: templateDownloadUrl,
+    onConfirm: function (result) {
+        // result.selected là dữ liệu đã xem trước; mapping/check thuộc giao diện biểu.
+    }
+};
+```
+
+Biến môi trường tùy chọn cho service: `EFORM_MODEL_PATH`, `EFORM_DEVICE`,
+`EFORM_MAX_UPLOAD_BYTES`, `EFORM_MAX_UNCOMPRESSED_BYTES` và `EFORM_REVIEW_THRESHOLD`.

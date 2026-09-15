@@ -10,21 +10,24 @@ namespace ImportDocument.ImportApi.Controllers
     {
         private readonly IImportService service;
         public ImportController(IImportService service) { this.service = service; }
+
+        [HttpGet, Route("health")]
+        public async Task<IHttpActionResult> Health(CancellationToken cancellationToken)
+        {
+            return Ok(await service.GetHealthAsync(cancellationToken));
+        }
+
         [HttpPost, Route("parse")]
         public async Task<IHttpActionResult> Parse(CancellationToken cancellationToken)
         {
             if (HttpContext.Current.Request.Files.Count == 0) return BadRequest("Vui lòng chọn file Excel.");
             var file = HttpContext.Current.Request.Files[0];
+            var originalFileName = HttpContext.Current.Request.Form["originalFileName"];
+            if (string.IsNullOrWhiteSpace(originalFileName)) originalFileName = file.FileName;
             var userId = HttpContext.Current.Request.Form["userId"];
             var documentId = HttpContext.Current.Request.Form["documentId"];
-            var targetSchemaJson = HttpContext.Current.Request.Form["targetSchemaJson"];
-            var docTypeCode = HttpContext.Current.Request.Form["docTypeCode"];
-            int formIndex;
-            if (!int.TryParse(HttpContext.Current.Request.Form["formIndex"], out formIndex) || formIndex < 0) formIndex = 0;
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(documentId)) return BadRequest("Thiếu userId hoặc documentId.");
             var result = await service.ImportAsync(
-                file.InputStream, file.FileName, userId, documentId,
-                targetSchemaJson, docTypeCode, formIndex, cancellationToken);
+                file.InputStream, originalFileName, userId, documentId, cancellationToken);
             return Ok(result);
         }
     }

@@ -6,14 +6,13 @@ namespace ImportDocument.Application.Services
 {
     public interface IImportService
     {
+        Task<object> GetHealthAsync(CancellationToken cancellationToken);
+
         Task<ImportResponseDto> ImportAsync(
             Stream file,
             string fileName,
             string userId,
             string documentId,
-            string targetSchemaJson,
-            string docTypeCode,
-            int formIndex,
             CancellationToken cancellationToken);
     }
 }

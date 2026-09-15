@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="720" viewBox="0 0 1600 720">
+  <defs>
+    <style>
+      .title{font:700 28px Arial,sans-serif;fill:#172033}.subtitle{font:15px Arial,sans-serif;fill:#526078}
+      .box{fill:#fff;stroke:#3a4a63;stroke-width:2;rx:14}.ai{fill:#eef5ff;stroke:#2563eb}.old{fill:#f2fbf5;stroke:#24804a}
+      .warn{fill:#fff7e8;stroke:#c97a12}.t{font:700 16px Arial,sans-serif;fill:#172033}.s{font:14px Arial,sans-serif;fill:#39485f}
+      .arrow{stroke:#526078;stroke-width:2.2;fill:none;marker-end:url(#a)}.dash{stroke:#8b98aa;stroke-width:2;stroke-dasharray:8 7;fill:none}
+      .scope{font:700 15px Arial,sans-serif}.note{font:14px Arial,sans-serif;fill:#6a4a00}
+    </style>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#526078"/></marker>
+  </defs>
+  <rect width="1600" height="720" fill="#f8fafc"/>
+  <text x="800" y="48" text-anchor="middle" class="title">Kiến trúc EFormExcelStructureExtractor-v1</text>
+  <text x="800" y="76" text-anchor="middle" class="subtitle">AI local trích xuất cấu trúc và dữ liệu phục vụ preview — không LLM, không mapping DataField</text>
+
+  <rect x="35" y="122" width="1000" height="390" rx="20" fill="#f6f9ff" stroke="#8db3f4" stroke-width="2"/>
+  <text x="55" y="150" class="scope" fill="#245bbb">PHẠM VI MODULE AI MỚI</text>
+  <rect x="1060" y="122" width="505" height="390" rx="20" fill="#f4fbf6" stroke="#84c89c" stroke-width="2"/>
+  <text x="1080" y="150" class="scope" fill="#217342">PHẠM VI GIAO DIỆN eFORM HIỆN CÓ</text>
+
+  <rect x="65" y="205" width="155" height="105" class="box"/>
+  <text x="142" y="242" text-anchor="middle" class="t">File Excel</text>
+  <text x="142" y="267" text-anchor="middle" class="s">.xlsx / .xlsm</text>
+  <text x="142" y="289" text-anchor="middle" class="s">Nhiều sheet/bảng</text>
+
+  <rect x="260" y="205" width="175" height="105" class="box ai"/>
+  <text x="347" y="238" text-anchor="middle" class="t">Excel parser</text>
+  <text x="347" y="263" text-anchor="middle" class="s">Cell • Merge • Style</text>
+  <text x="347" y="285" text-anchor="middle" class="s">Type • Formula</text>
+
+  <rect x="475" y="190" width="245" height="135" class="box ai"/>
+  <text x="597" y="226" text-anchor="middle" class="t">Model local</text>
+  <text x="597" y="250" text-anchor="middle" class="s">Multi-task Transformer nhỏ</text>
+  <text x="597" y="274" text-anchor="middle" class="s">TITLE / HEADER / DATA</text>
+  <text x="597" y="298" text-anchor="middle" class="s">FOOTER / BOUNDARY</text>
+
+  <rect x="760" y="205" width="215" height="105" class="box ai"/>
+  <text x="867" y="238" text-anchor="middle" class="t">Hậu xử lý xác định</text>
+  <text x="867" y="263" text-anchor="middle" class="s">Dựng range/header path</text>
+  <text x="867" y="285" text-anchor="middle" class="s">Copy nguyên value</text>
+
+  <rect x="1090" y="190" width="195" height="135" class="box old"/>
+  <text x="1187" y="226" text-anchor="middle" class="t">Handsontable</text>
+  <text x="1187" y="250" text-anchor="middle" class="s">Hiển thị PreviewData</text>
+  <text x="1187" y="274" text-anchor="middle" class="s">Chọn/sửa vùng</text>
+  <text x="1187" y="298" text-anchor="middle" class="s">Chưa sửa document</text>
+
+  <rect x="1325" y="190" width="205" height="135" class="box old"/>
+  <text x="1427" y="226" text-anchor="middle" class="t">Sau xác nhận</text>
+  <text x="1427" y="250" text-anchor="middle" class="s">FormConfig + mapping</text>
+  <text x="1427" y="274" text-anchor="middle" class="s">Validation eForm</text>
+  <text x="1427" y="298" text-anchor="middle" class="s">IMPORT_EXCEL_DONE</text>
+
+  <path d="M220 258 H260" class="arrow"/><path d="M435 258 H475" class="arrow"/><path d="M720 258 H760" class="arrow"/>
+  <path d="M975 258 H1090" class="arrow"/><path d="M1285 258 H1325" class="arrow"/>
+  <text x="1028" y="242" text-anchor="middle" class="s">PreviewData</text>
+
+  <rect x="250" y="375" width="540" height="96" class="box warn"/>
+  <text x="520" y="407" text-anchor="middle" class="t">Nguyên tắc bảo toàn dữ liệu</text>
+  <text x="520" y="433" text-anchor="middle" class="note">Model chỉ chọn cấu trúc và tọa độ ô.</text>
+  <text x="520" y="456" text-anchor="middle" class="note">raw_value / display_value / formula được copy trực tiếp từ workbook.</text>
+
+  <rect x="1110" y="375" width="400" height="96" class="box old"/>
+  <text x="1310" y="407" text-anchor="middle" class="t">DocumentContent chỉ dùng tại giao diện</text>
+  <text x="1310" y="433" text-anchor="middle" class="s">AI không nhận FormConfig/DataField</text>
+  <text x="1310" y="456" text-anchor="middle" class="s">AI dừng trước nút Nhập dữ liệu</text>
+
+  <path d="M1035 122 V512" class="dash"/>
+  <rect x="245" y="565" width="1110" height="90" rx="16" fill="#172033"/>
+  <text x="800" y="600" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#fff">Kết quả mong đợi</text>
+  <text x="800" y="630" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="#dce6f7">Sheet + table range + header rows + merges + columns + rows + confidence + issues</text>
+</svg>

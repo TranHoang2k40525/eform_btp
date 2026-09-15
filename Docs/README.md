@@ -1,17 +1,34 @@
-# Bộ báo cáo AI Import Excel - bản dễ hiểu
+# Bộ tài liệu kế hoạch AI trích xuất cấu trúc Excel cho eForm
 
-Bộ này được vẽ lại từ đầu.
+## Phạm vi đã chốt
 
-## Điểm thay đổi
-- Luồng chính của cả hai sơ đồ chỉ đi từ trái sang phải.
-- Không còn dây quay vòng dài.
-- Người dùng được lặp lại ở đầu/cuối Data Flow để tránh dây quay ngược.
-- Các kho dữ liệu nằm phía dưới tiến trình liên quan.
-- Dây Draw.io dùng tọa độ cố định để hạn chế mất connector hoặc tự route xuyên ô.
-- Tên có thể Việt hóa đã chuyển sang tiếng Việt.
-- Chỉ giữ tiếng Anh cho tên sản phẩm/khái niệm kỹ thuật cần thiết như DataField, Handsontable, BGE-M3, .NET, MySQL.
+Dự án xây dựng một mô hình AI local có tên làm việc `EFormExcelStructureExtractor-v1`. Mô hình nhận file Excel, nhận diện vùng bảng, header nhiều tầng và vùng dữ liệu; chương trình sau đó sao chép nguyên giá trị ô để tạo dữ liệu xem trước cho Handsontable.
 
-## File chính
-- Bao_cao_tien_do_AI_Import_Excel.md
-- So_do_kien_truc_Module_Import_Excel.drawio
-- So_do_luong_du_lieu_Data_Flow.drawio
+Mô hình không dùng LLM, không gọi dịch vụ Internet, không ánh xạ DataField, không sinh `FormConfig`, không kiểm tra nghiệp vụ và không ghi vào document. Sau khi người dùng bấm **Nhập dữ liệu**, giao diện eForm tiếp tục dùng logic hiện có để so khớp với biểu, validation và tạo `ValueData`/`SourceData`.
+
+## Danh mục tài liệu
+
+| File | Nội dung |
+|---|---|
+| `plane.txt` | Kế hoạch thực hiện theo giai đoạn, đầu việc, đầu ra và điều kiện nghiệm thu |
+| `01_BAO_CAO_PHAN_TICH_CHI_TIET.md` | Báo cáo tổng thể: bài toán, hệ thống cũ, AI mới, lợi ích, giới hạn, kết quả mong đợi |
+| `02_THIET_KE_DATASET_VA_HUAN_LUYEN.md` | Thiết kế dữ liệu, nhãn, mô hình, huấn luyện, đánh giá và chống rò rỉ |
+| `03_SO_DO_KIEN_TRUC_VA_DATA_FLOW.md` | Sơ đồ Mermaid cho kiến trúc, dữ liệu huấn luyện và luồng suy luận |
+| `Bao_cao_chi_tiet_AI_Trich_xuat_Excel.html` | Báo cáo HTML độc lập để trình bày cho nhóm và người không chuyên |
+| `So_do_kien_truc_AI_Trich_xuat_Excel.svg` | Sơ đồ kiến trúc xem trực tiếp |
+| `So_do_huan_luyen_va_suy_luan.svg` | Sơ đồ dataset, huấn luyện và suy luận xem trực tiếp |
+
+## Kết luận ngắn
+
+```text
+Excel
+  → parser đọc ô/merge/style
+  → model nhận diện cấu trúc bảng
+  → hậu xử lý xác định
+  → PreviewData giữ nguyên header và value
+  → Handsontable hiển thị
+  → người dùng xác nhận
+  → giao diện cũ mapping/validation/import
+```
+
+Giá trị trong Excel không được mô hình “đoán” hoặc sinh lại. Mô hình chỉ chọn cấu trúc; code sao chép giá trị trực tiếp để yêu cầu bảo toàn dữ liệu đạt 100%.

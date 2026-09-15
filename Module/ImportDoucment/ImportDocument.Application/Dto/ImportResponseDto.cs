@@ -20,6 +20,9 @@ namespace ImportDocument.Application.Dto
         public object Columns { get; set; }
         public object RowMappings { get; set; }
         public object AiResult { get; set; }
+        public object Warnings { get; set; }
+        public int TableCount { get; set; }
+        public double DurationMs { get; set; }
     }
 }
 

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Báo cáo AI trích xuất cấu trúc Excel cho eForm</title>
+  <style>
+    :root{--ink:#172033;--muted:#5b687c;--line:#dce3ed;--blue:#2563eb;--blue2:#eef5ff;--green:#24804a;--green2:#effaf3;--amber:#a96408;--amber2:#fff7e8;--red:#b42318;--red2:#fff1f0;--paper:#fff;--bg:#f5f7fb}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 Inter,Segoe UI,Arial,sans-serif}
+    .hero{background:linear-gradient(135deg,#13213b,#1e4f9c);color:#fff;padding:54px 24px 48px}.wrap{max-width:1180px;margin:auto}.eyebrow{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#bcd3ff;font-weight:700}.hero h1{font-size:clamp(32px,5vw,55px);line-height:1.08;margin:12px 0 16px;max-width:980px}.hero p{max-width:900px;font-size:19px;color:#e4edff}.pill{display:inline-block;padding:7px 12px;border:1px solid #7fa8ee;border-radius:999px;margin:4px 6px 0 0;background:#ffffff13;font-size:14px}
+    nav{position:sticky;top:0;z-index:10;background:#ffffffee;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}nav .wrap{display:flex;gap:18px;overflow:auto;padding:12px 20px}nav a{white-space:nowrap;color:#31435f;text-decoration:none;font-size:14px;font-weight:650}main{padding:32px 20px 70px}section{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:30px;margin:0 0 24px;box-shadow:0 8px 30px #1720330a}h2{font-size:29px;margin:0 0 16px}h3{font-size:21px;margin:28px 0 10px}p{margin:10px 0}.lead{font-size:19px;color:#33435c}.muted{color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}.card{grid-column:span 3;border:1px solid var(--line);border-radius:14px;padding:18px;background:#fbfcfe}.card strong{display:block;font-size:27px;color:var(--blue)}.card span{color:var(--muted)}.half{grid-column:span 6}.third{grid-column:span 4}
+    .callout{border-left:5px solid var(--blue);background:var(--blue2);padding:18px 20px;border-radius:8px;margin:18px 0}.callout.green{border-color:var(--green);background:var(--green2)}.callout.amber{border-color:var(--amber);background:var(--amber2)}.callout.red{border-color:var(--red);background:var(--red2)}
+    table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}th,td{border:1px solid var(--line);padding:11px 12px;text-align:left;vertical-align:top}th{background:#edf2f9}tr:nth-child(even) td{background:#fbfcfe}code{font-family:Consolas,monospace;background:#eef2f7;padding:2px 5px;border-radius:5px}pre{overflow:auto;background:#111b2c;color:#e8effc;padding:18px;border-radius:12px;font:13px/1.55 Consolas,monospace}
+    .flow{display:flex;align-items:stretch;gap:10px;overflow:auto;padding:10px 0 18px}.node{min-width:155px;max-width:190px;border:2px solid #8aa7d7;background:#f2f7ff;border-radius:12px;padding:15px;text-align:center;font-size:14px}.node b{display:block;margin-bottom:5px}.node.green{border-color:#7fbd94;background:#f1faf4}.arrow{align-self:center;font-size:24px;color:#62728c}.scope{display:grid;grid-template-columns:1fr 1fr;gap:16px}.scope>div{border-radius:14px;padding:20px}.scope .in{background:var(--blue2);border:1px solid #a9c5f5}.scope .out{background:#f7f8fa;border:1px solid #d1d7e0}.timeline{border-left:3px solid #bdd0ef;margin-left:10px;padding-left:24px}.step{position:relative;margin:0 0 22px}.step:before{content:"";position:absolute;width:13px;height:13px;border-radius:50%;background:var(--blue);left:-32px;top:7px}.step b{color:#163e82}.tag{display:inline-block;border-radius:6px;padding:2px 7px;font-size:12px;font-weight:700;background:#e9eef6;color:#34435a;margin-right:5px}
+    img.diagram{width:100%;border:1px solid var(--line);border-radius:14px;background:#fff;margin:14px 0}.check li{margin:7px 0}.footer{text-align:center;color:#6a7588;padding:25px}
+    @media(max-width:820px){.card,.half,.third{grid-column:span 12}.scope{grid-template-columns:1fr}section{padding:22px}.hero{padding-top:38px}}
+    @media print{nav{display:none}body{background:#fff}.hero{background:#fff;color:#111;padding:25px 0}.hero p,.eyebrow{color:#333}section{box-shadow:none;break-inside:avoid}.wrap{max-width:none}main{padding:16px 0}}
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">eForm BTP · Định hướng mới</div>
+      <h1>AI trích xuất cấu trúc và dữ liệu Excel phục vụ Preview</h1>
+      <p>Một model local nhận diện vùng bảng, header nhiều tầng và vùng dữ liệu. Giá trị được sao chép nguyên từ workbook để hiển thị trước nút <b>Nhập dữ liệu</b>; giao diện eForm hiện hữu tiếp tục mapping và validation sau xác nhận.</p>
+      <span class="pill">Không LLM</span><span class="pill">Không API bên ngoài</span><span class="pill">Không mapping DataField</span><span class="pill">Không ghi document</span><span class="pill">Local model</span>
+    </div>
+  </header>
+  <nav><div class="wrap"><a href="#tomtat">Tóm tắt</a><a href="#cu">Hệ thống cũ</a><a href="#moi">AI mới</a><a href="#model">Mô hình</a><a href="#data">Dữ liệu</a><a href="#train">Huấn luyện</a><a href="#sosanh">So sánh</a><a href="#apdung">Khả năng áp dụng</a><a href="#kehoach">Kế hoạch</a><a href="#nghiemthu">Nghiệm thu</a></div></nav>
+  <main class="wrap">
+    <section id="tomtat">
+      <h2>1. Tóm tắt điều hành</h2>
+      <p class="lead">Sản phẩm cần xây là <b>EFormExcelStructureExtractor-v1</b>: AI nhận diện cấu trúc spreadsheet, không phải chatbot và không phải hệ thống ánh xạ nghiệp vụ.</p>
+      <div class="grid">
+        <div class="card"><strong>1.232</strong><span>workbook Raw hiện có</span></div>
+        <div class="card"><strong>27</strong><span>mã biểu được ghi nhận</span></div>
+        <div class="card"><strong>100%</strong><span>mục tiêu bảo toàn value</span></div>
+        <div class="card"><strong>0</strong><span>lời gọi LLM/API Internet</span></div>
+      </div>
+      <div class="callout green"><b>Quyết định kiến trúc:</b> AI chỉ chọn cấu trúc và tọa độ. Parser/hậu xử lý lấy lại đúng raw value, display value, formula và merge từ workbook. Vì vậy model không có cơ hội đổi số liệu báo cáo.</div>
+      <div class="scope">
+        <div class="in"><h3>Trong phạm vi AI</h3><ul><li>Phát hiện sheet và nhiều vùng bảng.</li><li>Nhận diện title, metadata, header, code row, data, note, footer.</li><li>Dựng header rows, header path và merge.</li><li>Trả PreviewData, confidence và issues.</li></ul></div>
+        <div class="out"><h3>Ngoài phạm vi AI</h3><ul><li>DocumentContent, FormConfig và DataField.</li><li>Mapping dữ liệu vào biểu.</li><li>Required/readonly/sum/business rules.</li><li>ValueData, SourceData và ghi document.</li></ul></div>
+      </div>
+    </section>
+
+    <section id="cu">
+      <h2>2. Hệ thống cũ hoạt động như thế nào?</h2>
+      <p>Luồng document import hiện tại nhận cấu hình biểu trước khi tách dữ liệu. Số dòng header thường được suy ra từ <code>FormConfig.extra.headerSetting.length</code>; các dòng còn lại được ghép vào danh sách field nhìn thấy theo vị trí. ID field được lấy từ phần trước <code>!!</code> trong khóa header.</p>
+      <div class="flow"><div class="node"><b>Excel</b>File người dùng</div><div class="arrow">→</div><div class="node"><b>FormConfig</b>Header count + fields</div><div class="arrow">→</div><div class="node"><b>Cắt dòng</b>Bỏ N dòng header</div><div class="arrow">→</div><div class="node"><b>Ghép vị trí</b>Excel col i → field i</div><div class="arrow">→</div><div class="node"><b>Preview</b>Handsontable</div><div class="arrow">→</div><div class="node"><b>Xác nhận</b>IMPORT_EXCEL_DONE</div></div>
+      <h3>Điểm tốt</h3><p>Nhanh, đơn giản và rất ổn định khi Excel đúng tuyệt đối template. Logic mapping, validation, readonly và ghi document đã có sẵn nên không cần thay.</p>
+      <h3>Giới hạn</h3><p>Khi file thêm title, đổi số dòng header, có nhiều table/sheet, footer dài hoặc merge khác nhẹ, việc lấy vùng bảng dựa trên FormConfig có thể sai. Lỗi extract và lỗi mapping bị trộn trong cùng một bước nên khó kiểm tra.</p>
+    </section>
+
+    <section id="moi">
+      <h2>3. Kiến trúc hướng mới</h2>
+      <img class="diagram" src="So_do_kien_truc_AI_Trich_xuat_Excel.svg" alt="Sơ đồ kiến trúc AI trích xuất Excel">
+      <div class="flow"><div class="node"><b>Excel parser</b>Cell, merge, style, type</div><div class="arrow">→</div><div class="node"><b>Model local</b>Role + boundary</div><div class="arrow">→</div><div class="node"><b>Decoder</b>Table range hợp lệ</div><div class="arrow">→</div><div class="node"><b>Copy cells</b>Không sinh value</div><div class="arrow">→</div><div class="node green"><b>PreviewData</b>Header + values</div></div>
+      <h3>Contract đầu ra</h3>
+      <pre>{
+  "schema_version": "1.0",
+  "file_name": "bao-cao.xlsx",
+  "sheets": [{
+    "sheet_name": "9a",
+    "tables": [{
+      "table_id": "9a-table-1",
+      "range": "A3:I7",
+      "header_start_row": 3,
+      "header_end_row": 6,
+      "data_start_row": 7,
+      "data_end_row": 7,
+      "header_rows": [],
+      "merged_cells": [],
+      "columns": [],
+      "rows": [[2616, 2616, 14912000]],
+      "confidence": 0.98,
+      "issues": []
+    }]
+  }]
+}</pre>
+      <div class="callout amber"><b>Vì sao rows là array?</b> Header như “Tổng số” có thể lặp ở nhiều nhánh. Dùng tên header làm JSON key sẽ va chạm và mất cột. Mỗi value phải bám <code>source_column</code>; chỉ giao diện eForm mới đổi sang object có DataField ID sau xác nhận.</div>
+    </section>
+
+    <section id="model">
+      <h2>4. Mô hình AI được xây dựng</h2>
+      <p class="lead">Một checkpoint multi-task nhỏ, chạy local/CPU và có thể export ONNX.</p>
+      <div class="grid">
+        <div class="card third"><strong style="font-size:19px">Cell encoder</strong><span>Kiểu ô, pattern, merge, style, vị trí và text hình thái</span></div>
+        <div class="card third"><strong style="font-size:19px">Row encoder</strong><span>Pooling cell và ngữ cảnh các dòng lân cận</span></div>
+        <div class="card third"><strong style="font-size:19px">Transformer</strong><span>2-4 lớp, học chuỗi TITLE → HEADER → DATA → FOOTER</span></div>
+      </div>
+      <table><thead><tr><th>Output head</th><th>Nhiệm vụ</th><th>Cách dùng</th></tr></thead><tbody>
+        <tr><td>Row-role</td><td>Phân loại TITLE, METADATA, HEADER, COLUMN_CODE, DATA, NOTE, FOOTER, BLANK</td><td>Xác định thành phần sheet</td></tr>
+        <tr><td>Boundary</td><td>Dự đoán table/header/data start/end</td><td>Cắt table range</td></tr>
+        <tr><td>Cell-role</td><td>Phân biệt header cell, label cell, value cell và note</td><td>Xử lý sheet khó/nhiều bảng</td></tr>
+      </tbody></table>
+      <p>Actual report value không được dùng để đoán ý nghĩa. Model có thể dùng loại dữ liệu, mật độ numeric và pattern nhưng hậu xử lý luôn copy lại cell gốc.</p>
+    </section>
+
+    <section id="data">
+      <h2>5. Dữ liệu và cách gắn nhãn</h2>
+      <p>Dữ liệu hiện có rất lệch: 09a có 722 file, 05b có 139 file, trong khi nhiều mã chỉ có 1-6 file. Nhiều file khác tên đơn vị nhưng dùng chung một template. Vì vậy số workbook không tương đương số layout độc lập.</p>
+      <div class="flow"><div class="node"><b>Raw</b>1.232 workbook</div><div class="arrow">→</div><div class="node"><b>Fingerprint</b>Merge + code + geometry</div><div class="arrow">→</div><div class="node"><b>Family</b>Gom template giống</div><div class="arrow">→</div><div class="node"><b>Silver</b>Rule/parser gợi ý</div><div class="arrow">→</div><div class="node green"><b>Gold</b>Human review</div></div>
+      <h3>Nhãn cần thu thập</h3>
+      <ul><li>Table start/end và column start/end.</li><li>Header start/end, code row, data start/end.</li><li>Row role và cell role.</li><li>Merge anchor/span.</li><li>Expected PreviewData cho kiểm thử end-to-end.</li></ul>
+      <div class="callout"><b>Chống leakage:</b> chia 70/15/15 theo layout family. Toàn bộ file copy, sheet và table của cùng family nằm trong một split. Test giữ riêng và không dùng để chọn checkpoint.</div>
+    </section>
+
+    <section id="train">
+      <h2>6. Huấn luyện và suy luận</h2>
+      <img class="diagram" src="So_do_huan_luyen_va_suy_luan.svg" alt="Sơ đồ huấn luyện và suy luận">
+      <h3>Huấn luyện</h3><ol><li>Fit vocabulary/normalizer chỉ trên Train.</li><li>Dùng weighted cross-entropy và balanced sampler để lớp DATA/BLANK không lấn át lớp hiếm.</li><li>Tăng trọng số lỗi boundary vì sai một dòng có thể làm mất toàn bộ bảng.</li><li>Early stop theo whole-table exact match trên Validation.</li><li>Chọn confidence/OOD threshold trên Validation.</li><li>Khóa checkpoint rồi mới chạy Test.</li><li>Export ONNX cùng feature config, label map, dataset hash và model card.</li></ol>
+      <h3>Suy luận</h3><p>Parser đọc workbook → tạo features → ONNX model dự đoán → constrained decoder tạo range hợp lệ → copy cell gốc → validate JSON → trả PreviewData. Nếu confidence thấp, hệ thống trả issue và yêu cầu người dùng chọn vùng thủ công.</p>
+    </section>
+
+    <section id="sosanh">
+      <h2>7. Lợi ích và lý do cần AI</h2>
+      <table><thead><tr><th>Tiêu chí</th><th>Hệ thống cũ</th><th>Hướng AI mới</th><th>Lợi ích</th></tr></thead><tbody>
+        <tr><td>Phụ thuộc biểu</td><td>Cần FormConfig khi cắt dữ liệu</td><td>Extract không cần DocumentContent</td><td>Dùng lại cho mọi biểu cùng quy ước</td></tr>
+        <tr><td>Header biến thể</td><td>Dựa vào số dòng header cấu hình</td><td>Model dự đoán boundary</td><td>Chịu được thêm/bớt title/metadata</td></tr>
+        <tr><td>Nhiều bảng</td><td>Khó tách tự động</td><td>Trả danh sách table region</td><td>Người dùng chọn đúng bảng</td></tr>
+        <tr><td>Footer/ghi chú</td><td>Có thể bị tính vào data</td><td>Phân loại NOTE/FOOTER</td><td>Row count đúng hơn</td></tr>
+        <tr><td>Preview nguồn</td><td>Gắn sớm với cấu hình biểu</td><td>Hiển thị raw header/value trước</td><td>Dễ đối chiếu và debug</td></tr>
+        <tr><td>Độ an toàn số liệu</td><td>Copy trực tiếp</td><td>Vẫn copy trực tiếp</td><td>AI không làm thay đổi số</td></tr>
+        <tr><td>Mở rộng biểu mới</td><td>Có thể cấu hình lại cách cắt</td><td>Học cấu trúc chung</td><td>Không phụ thuộc DataField mới</td></tr>
+        <tr><td>Bảo mật</td><td>Nội bộ</td><td>Model local, không gọi Internet</td><td>Phù hợp dữ liệu hành chính</td></tr>
+      </tbody></table>
+      <div class="callout red"><b>Giới hạn trung thực:</b> nếu toàn bộ Excel luôn đúng tuyệt đối một template, rule cũ đơn giản và kinh tế hơn. AI chỉ đáng đầu tư khi cần xử lý nhiều biến thể header/sheet/table/footer mà không muốn cấu hình thủ công từng file.</div>
+    </section>
+
+    <section id="apdung">
+      <h2>8. Có áp dụng cho tất cả loại biểu không?</h2>
+      <div class="grid">
+        <div class="card half"><strong style="font-size:20px;color:var(--green)">Có thể tổng quát</strong><span>Cho biểu mới có cell grid thật, table liên tục và quy ước title/header/code/data/footer tương tự dữ liệu đã train. Vì không học DataField, thay đổi nội dung biểu không nhất thiết phải train lại.</span></div>
+        <div class="card half"><strong style="font-size:20px;color:var(--red)">Không bảo đảm tuyệt đối</strong><span>Với ảnh scan trong Excel, file hỏng/khóa, macro động, bảng rải rác hoặc layout hoàn toàn ngoài phân phối. Các trường hợp này phải trả OOD và fallback thủ công.</span></div>
+      </div>
+      <p>Cam kết đúng phải là “áp dụng cho mọi biểu nằm trong phạm vi cấu trúc đã định nghĩa và có cơ chế từ chối/fallback cho file ngoài phạm vi”, không phải “đọc đúng mọi file Excel trên thế giới”.</p>
+    </section>
+
+    <section id="kehoach">
+      <h2>9. Kế hoạch 8 tuần</h2>
+      <div class="timeline">
+        <div class="step"><b>Tuần 1 — Contract và baseline</b><p>Chốt PreviewData, định dạng hỗ trợ, golden workbooks và lỗi baseline.</p></div>
+        <div class="step"><b>Tuần 1-2 — Kiểm kê layout</b><p>Tạo manifest/fingerprint/family; phân tích mất cân bằng và chọn mẫu đại diện.</p></div>
+        <div class="step"><b>Tuần 2-3 — Gắn nhãn</b><p>Rule tạo silver; human review table/header/data/footer theo family để tạo gold.</p></div>
+        <div class="step"><b>Tuần 3 — Split và baseline ML</b><p>Chia family 70/15/15, khóa Test, xây rule-only và classifier baseline.</p></div>
+        <div class="step"><b>Tuần 4-5 — Model chính</b><p>Huấn luyện multi-task Transformer nhỏ, early stopping, chọn threshold và export ONNX.</p></div>
+        <div class="step"><b>Tuần 5 — Decoder/PreviewData</b><p>Dựng table/header paths, copy values, schema validation và fallback.</p></div>
+        <div class="step"><b>Tuần 6 — Đánh giá độc lập</b><p>Test/challenge, metric phân tầng, latency/memory, failure analysis.</p></div>
+        <div class="step"><b>Tuần 7-8 — Tích hợp và pilot</b><p>API extract, Handsontable preview, shadow mode, correction loop và release gate.</p></div>
+      </div>
+    </section>
+
+    <section id="nghiemthu">
+      <h2>10. Kết quả mong đợi và nghiệm thu</h2>
+      <p class="muted">Các mức dưới đây là mục tiêu phải đo, không phải số liệu đã đạt.</p>
+      <table><thead><tr><th>Chỉ số</th><th>Mục tiêu v1</th><th>Lý do</th></tr></thead><tbody>
+        <tr><td>Cell value preservation</td><td><b>100%</b></td><td>Giá trị được copy, không dự đoán</td></tr>
+        <tr><td>Header text preservation</td><td><b>100%</b> khi vùng đúng</td><td>Không được sửa nội dung nguồn</td></tr>
+        <tr><td>Table detection F1</td><td><b>≥ 0,98</b></td><td>Đúng vùng bảng</td></tr>
+        <tr><td>Header/data boundary exact</td><td><b>≥ 0,95</b></td><td>Không mất hoặc thừa dòng</td></tr>
+        <tr><td>Column count exact</td><td><b>≥ 0,98</b></td><td>Không mất cột</td></tr>
+        <tr><td>Whole-table exact match</td><td><b>≥ 0,95</b></td><td>Đánh giá end-to-end</td></tr>
+      </tbody></table>
+      <ul class="check"><li>✓ Chạy hoàn toàn local.</li><li>✓ Không cần DocumentContent để extract.</li><li>✓ Không sửa document trước xác nhận.</li><li>✓ Có source coordinate cho mọi output cell.</li><li>✓ Có manual fallback và OOD detection.</li><li>✓ Test độc lập theo layout family.</li><li>✓ Giao diện cũ tiếp tục mapping/validation/import.</li></ul>
+      <div class="callout green"><b>Kết luận:</b> AI mới chịu trách nhiệm làm cho bước đọc Excel linh hoạt và kiểm chứng được hơn; nó không thay thế nghiệp vụ eForm. Đây là ranh giới giúp dự án có thể huấn luyện bằng dữ liệu hiện có, chạy local và vẫn bảo đảm độ chính xác tuyệt đối của value.</div>
+    </section>
+  </main>
+  <div class="footer">Báo cáo định hướng · EFormExcelStructureExtractor-v1 · Preview trước nút Nhập dữ liệu</div>
+</body>
+</html>

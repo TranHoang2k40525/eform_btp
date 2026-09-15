@@ -3,85 +3,139 @@
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
-    <title>Import dữ liệu Excel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Xem trước dữ liệu Excel | eForm</title>
+    <link rel="stylesheet" href="/Content/handsontable.full.min.css" />
     <link rel="stylesheet" href="/Content/import.css" />
 </head>
 <body>
-    <div class="toolbar">
-        <button type="button">⬇ Tải template</button>
-        <button type="button" id="import">📁 Import dữ liệu</button>
-        <button type="button" class="primary" id="confirm">✅ Nhập dữ liệu</button>
-    </div>
-    <div class="modal">
-        <h2>Import dữ liệu Excel</h2>
-        <input id="file" type="file" accept=".xlsx,.xlsm" />
-        <input id="userId" placeholder="UserId" value="test-user" />
-        <input id="documentId" placeholder="DocumentId" value="document-test-001" />
-        <input id="docTypeCode" placeholder="DocTypeCode, ví dụ 04b" />
-        <input id="formIndex" type="number" min="0" value="0" title="Vị trí form trong DocumentContents" />
-        <textarea id="targetSchemaJson" rows="8" placeholder="Dán JSON document eForm có DocumentContents/FormConfig"></textarea>
-        <span id="status">Chưa có dữ liệu</span>
-    </div>
-    <div class="grid"><table id="table" border="1" cellpadding="8"></table></div>
-    <div class="side">
-        <h3>Cảnh báo dữ liệu</h3>
-        <select><option>Tất cả</option></select>
-        <p id="summary">Chưa có dữ liệu</p>
-    </div>
-    <script>
-        const fileInput = document.getElementById('file');
-        const status = document.getElementById('status');
-        const summary = document.getElementById('summary');
-        const table = document.getElementById('table');
+    <div class="app-shell">
+        <header class="topbar">
+            <div class="brand" aria-label="eForm AI Import">
+                <span class="brand-mark" aria-hidden="true">eF</span>
+                <span class="brand-copy">
+                    <strong>AI Import Excel</strong>
+                    <small>Xem trước dữ liệu trước khi nhập biểu</small>
+                </span>
+            </div>
 
-        document.getElementById('import').onclick = () => fileInput.click();
-        fileInput.onchange = async event => {
-            const selected = event.target.files[0];
-            if (!selected) return;
-            const schema = document.getElementById('targetSchemaJson').value.trim();
-            if (!schema) {
-                status.textContent = 'Thiếu JSON schema của biểu đích.';
-                return;
-            }
-            const form = new FormData();
-            form.append('file', selected);
-            form.append('userId', document.getElementById('userId').value);
-            form.append('documentId', document.getElementById('documentId').value);
-            form.append('docTypeCode', document.getElementById('docTypeCode').value);
-            form.append('formIndex', document.getElementById('formIndex').value || '0');
-            form.append('targetSchemaJson', schema);
-            status.textContent = 'Đang xử lý...';
-            table.textContent = '';
-            try {
-                const response = await fetch('/api/import/parse', { method: 'POST', body: form });
-                const result = await response.json();
-                status.textContent = result.message || (response.ok ? 'Đã xử lý' : 'Xử lý thất bại');
-                summary.textContent = `${result.rowCount || 0} dòng - ${result.errorCount || 0} lỗi`
-                    + (result.requiresReview ? ' - cần duyệt ánh xạ' : '');
-                renderRows(Array.isArray(result.data) ? result.data : []);
-            } catch (error) {
-                status.textContent = 'Không gọi được API: ' + error.message;
-            }
-        };
+            <div class="topbar-actions">
+                <span id="serviceStatus" class="service-status" role="status">
+                    <span class="service-dot" aria-hidden="true"></span>
+                    <span>Đang kiểm tra model</span>
+                </span>
+                <button type="button" id="downloadTemplate" class="button button-secondary">
+                    Tải template
+                </button>
+                <button type="button" id="import" class="button button-secondary">
+                    Chọn file Excel
+                </button>
+                <button type="button" id="confirm" class="button button-primary" disabled>
+                    Nhập dữ liệu
+                </button>
+            </div>
+        </header>
 
-        function renderRows(rows) {
-            if (!rows.length) return;
-            const keys = [...new Set(rows.flatMap(row => Object.keys(row)))];
-            const head = table.createTHead().insertRow();
-            keys.forEach(key => {
-                const cell = document.createElement('th');
-                cell.textContent = key;
-                head.appendChild(cell);
-            });
-            const body = table.createTBody();
-            rows.forEach(row => {
-                const tr = body.insertRow();
-                keys.forEach(key => {
-                    const cell = tr.insertCell();
-                    cell.textContent = row[key] == null ? '' : String(row[key]);
-                });
-            });
-        }
-    </script>
+        <div id="statusBar" class="status-bar" role="status" aria-live="polite">
+            <span id="statusText">Chọn một workbook để bắt đầu.</span>
+            <span id="statusMeta"></span>
+        </div>
+
+        <main class="workspace">
+            <section class="preview-panel" aria-labelledby="previewTitle">
+                <div class="preview-heading">
+                    <div>
+                        <h1 id="previewTitle">Bản xem trước dữ liệu</h1>
+                        <p id="fileName">Chưa có file được chọn</p>
+                    </div>
+                    <div class="preview-counts" aria-label="Thống kê workbook">
+                        <span><strong id="sheetCount">0</strong> sheet</span>
+                        <span><strong id="tableCount">0</strong> bảng</span>
+                        <span><strong id="valueRowCount">0</strong> dòng dữ liệu</span>
+                    </div>
+                </div>
+
+                <nav id="sheetTabs" class="sheet-tabs" aria-label="Danh sách sheet"></nav>
+                <nav id="tableTabs" class="table-tabs" aria-label="Danh sách vùng bảng"></nav>
+
+                <div id="gridHost" class="grid-host">
+                    <div id="hotContainer" class="hot-container" aria-label="Dữ liệu Excel đã tách"></div>
+
+                    <div id="emptyState" class="empty-state">
+                        <span class="file-badge" aria-hidden="true">XLSX</span>
+                        <h2>Đưa file Excel vào để xem dữ liệu</h2>
+                        <p>AI chỉ xác định vùng bảng. Giá trị, hàng tiêu đề và ô gộp được giữ nguyên để bạn kiểm tra.</p>
+                        <button type="button" id="emptyImport" class="button button-primary">Chọn file</button>
+                        <small>Hỗ trợ .xlsx và .xlsm, tối đa 50 MB</small>
+                    </div>
+
+                    <div id="loadingState" class="loading-state" hidden aria-label="Đang xử lý file">
+                        <div class="skeleton-toolbar"></div>
+                        <div class="skeleton-grid" aria-hidden="true">
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                        <p>Model đang nhận diện cấu trúc bảng và lấy dữ liệu gốc.</p>
+                    </div>
+
+                    <div id="dropOverlay" class="drop-overlay" hidden>
+                        <strong>Thả file để đọc dữ liệu</strong>
+                    </div>
+                </div>
+
+                <footer class="grid-footer">
+                    <span id="rangeInfo">Chưa chọn vùng bảng</span>
+                    <span id="selectionInfo">Dùng thanh cuộn ngoài của trang</span>
+                </footer>
+            </section>
+
+            <details class="inspector">
+                <summary class="inspector-heading">
+                    <h2 id="inspectorTitle">Thông tin nhận diện</h2>
+                    <span class="inspector-summary-meta">
+                        <span id="confidenceBadge" class="confidence-badge is-neutral">Chưa có kết quả</span>
+                        <span class="inspector-chevron" aria-hidden="true"></span>
+                    </span>
+                </summary>
+
+                <div class="inspector-body">
+                    <dl class="metadata-list">
+                        <div><dt>Sheet</dt><dd id="metaSheet">Chưa chọn</dd></div>
+                        <div><dt>Vùng nguồn</dt><dd id="metaRange">Chưa chọn</dd></div>
+                        <div><dt>Dòng tiêu đề</dt><dd id="metaHeaders">0</dd></div>
+                        <div><dt>Kích thước</dt><dd id="metaSize">0 x 0</dd></div>
+                        <div><dt>Thời gian xử lý</dt><dd id="metaDuration">0 ms</dd></div>
+                    </dl>
+
+                    <section class="inspector-section" aria-labelledby="hierarchyTitle">
+                        <div class="section-heading">
+                            <h3 id="hierarchyTitle">Cấu trúc cột cha và cột con</h3>
+                            <span id="columnCount">0 cột</span>
+                        </div>
+                        <div id="hierarchyList" class="hierarchy-list">
+                            <p class="muted-copy">Đường dẫn tiêu đề sẽ xuất hiện sau khi model phát hiện bảng.</p>
+                        </div>
+                    </section>
+
+                    <section class="inspector-section" aria-labelledby="noticeTitle">
+                        <div class="section-heading">
+                            <h3 id="noticeTitle">Kiểm tra trước khi nhập</h3>
+                        </div>
+                        <div id="noticeList" class="notice-list">
+                            <p class="muted-copy">Chưa có cảnh báo.</p>
+                        </div>
+                    </section>
+                </div>
+            </details>
+        </main>
+
+        <div class="page-bottom-buffer" aria-hidden="true"></div>
+        <input id="file" class="visually-hidden" type="file" accept=".xlsx,.xlsm" />
+    </div>
+
+    <script src="/Scripts/handsontable.full.min.js"></script>
+    <script src="/Scripts/import-preview.js"></script>
 </body>
 </html>

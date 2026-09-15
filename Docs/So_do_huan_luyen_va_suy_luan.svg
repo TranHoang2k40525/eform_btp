@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="800" viewBox="0 0 1600 800">
+  <defs>
+    <style>
+      .title{font:700 28px Arial,sans-serif;fill:#172033}.section{font:700 18px Arial,sans-serif;fill:#fff}
+      .box{fill:#fff;stroke:#3a4a63;stroke-width:2;rx:13}.train{fill:#eef5ff;stroke:#2563eb}.infer{fill:#f2fbf5;stroke:#24804a}.test{fill:#fff7e8;stroke:#c97a12}
+      .t{font:700 15px Arial,sans-serif;fill:#172033}.s{font:13px Arial,sans-serif;fill:#44536a}.arrow{stroke:#53627a;stroke-width:2;fill:none;marker-end:url(#a)}
+    </style>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#53627a"/></marker>
+  </defs>
+  <rect width="1600" height="800" fill="#f8fafc"/>
+  <text x="800" y="46" text-anchor="middle" class="title">Dữ liệu, huấn luyện và suy luận</text>
+
+  <rect x="38" y="82" width="1524" height="298" rx="20" fill="#f4f7ff" stroke="#8db3f4" stroke-width="2"/>
+  <rect x="38" y="82" width="220" height="42" rx="12" fill="#2563eb"/><text x="148" y="109" text-anchor="middle" class="section">HUẤN LUYỆN</text>
+
+  <rect x="75" y="175" width="165" height="92" class="box train"/><text x="157" y="208" text-anchor="middle" class="t">1.232 Raw</text><text x="157" y="232" text-anchor="middle" class="s">27 DocType</text><text x="157" y="251" text-anchor="middle" class="s">.xlsx / .xlsm</text>
+  <rect x="282" y="175" width="180" height="92" class="box train"/><text x="372" y="208" text-anchor="middle" class="t">Layout fingerprint</text><text x="372" y="232" text-anchor="middle" class="s">Header • Merge</text><text x="372" y="251" text-anchor="middle" class="s">Code • Geometry</text>
+  <rect x="504" y="175" width="175" height="92" class="box train"/><text x="591" y="208" text-anchor="middle" class="t">Silver labels</text><text x="591" y="232" text-anchor="middle" class="s">Rule/parser đề xuất</text><text x="591" y="251" text-anchor="middle" class="s">Chưa là ground truth</text>
+  <rect x="721" y="175" width="175" height="92" class="box train"/><text x="808" y="208" text-anchor="middle" class="t">Human review</text><text x="808" y="232" text-anchor="middle" class="s">Duyệt theo family</text><text x="808" y="251" text-anchor="middle" class="s">Tạo gold labels</text>
+  <rect x="938" y="175" width="175" height="92" class="box train"/><text x="1025" y="208" text-anchor="middle" class="t">Family split</text><text x="1025" y="232" text-anchor="middle" class="s">70 / 15 / 15</text><text x="1025" y="251" text-anchor="middle" class="s">Không leakage</text>
+  <rect x="1155" y="175" width="175" height="92" class="box train"/><text x="1242" y="208" text-anchor="middle" class="t">Train + validate</text><text x="1242" y="232" text-anchor="middle" class="s">Early stopping</text><text x="1242" y="251" text-anchor="middle" class="s">Boundary metrics</text>
+  <rect x="1372" y="175" width="150" height="92" class="box test"/><text x="1447" y="208" text-anchor="middle" class="t">ONNX model</text><text x="1447" y="232" text-anchor="middle" class="s">Model card</text><text x="1447" y="251" text-anchor="middle" class="s">Locked Test</text>
+  <path d="M240 221 H282" class="arrow"/><path d="M462 221 H504" class="arrow"/><path d="M679 221 H721" class="arrow"/><path d="M896 221 H938" class="arrow"/><path d="M1113 221 H1155" class="arrow"/><path d="M1330 221 H1372" class="arrow"/>
+  <text x="800" y="326" text-anchor="middle" class="s">Nhãn: TITLE • METADATA • HEADER • COLUMN_CODE • DATA • NOTE • FOOTER • BLANK • TABLE_SEPARATOR</text>
+
+  <rect x="38" y="418" width="1524" height="300" rx="20" fill="#f4fbf6" stroke="#84c89c" stroke-width="2"/>
+  <rect x="38" y="418" width="220" height="42" rx="12" fill="#24804a"/><text x="148" y="445" text-anchor="middle" class="section">SUY LUẬN LOCAL</text>
+  <rect x="76" y="515" width="170" height="92" class="box infer"/><text x="161" y="548" text-anchor="middle" class="t">Workbook mới</text><text x="161" y="572" text-anchor="middle" class="s">Không cần</text><text x="161" y="591" text-anchor="middle" class="s">DocumentContent</text>
+  <rect x="294" y="515" width="180" height="92" class="box infer"/><text x="384" y="548" text-anchor="middle" class="t">Cell features</text><text x="384" y="572" text-anchor="middle" class="s">Type • Merge • Style</text><text x="384" y="591" text-anchor="middle" class="s">Pattern • Neighbors</text>
+  <rect x="522" y="515" width="190" height="92" class="box infer"/><text x="617" y="548" text-anchor="middle" class="t">ONNX inference</text><text x="617" y="572" text-anchor="middle" class="s">Role + boundary</text><text x="617" y="591" text-anchor="middle" class="s">probabilities</text>
+  <rect x="760" y="515" width="190" height="92" class="box infer"/><text x="855" y="548" text-anchor="middle" class="t">Decoder</text><text x="855" y="572" text-anchor="middle" class="s">Range hợp lệ</text><text x="855" y="591" text-anchor="middle" class="s">Confidence + OOD</text>
+  <rect x="998" y="515" width="205" height="92" class="box infer"/><text x="1100" y="548" text-anchor="middle" class="t">Copy từ workbook</text><text x="1100" y="572" text-anchor="middle" class="s">Raw/display/formula</text><text x="1100" y="591" text-anchor="middle" class="s">Không sinh lại value</text>
+  <rect x="1251" y="500" width="245" height="122" class="box test"/><text x="1373" y="536" text-anchor="middle" class="t">PreviewData</text><text x="1373" y="560" text-anchor="middle" class="s">Sheets • Tables • Header</text><text x="1373" y="580" text-anchor="middle" class="s">Merge • Columns • Rows</text><text x="1373" y="600" text-anchor="middle" class="s">Issues • Source coordinates</text>
+  <path d="M246 561 H294" class="arrow"/><path d="M474 561 H522" class="arrow"/><path d="M712 561 H760" class="arrow"/><path d="M950 561 H998" class="arrow"/><path d="M1203 561 H1251" class="arrow"/>
+  <text x="800" y="674" text-anchor="middle" class="s">Nếu confidence thấp: trả issue và cho người dùng chọn sheet/table/header/data range thủ công.</text>
+  <text x="800" y="764" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#172033">Giá trị phải được bảo toàn 100% • Model không mapping DataField • Giao diện eForm xử lý sau nút Nhập dữ liệu</text>
+</svg>

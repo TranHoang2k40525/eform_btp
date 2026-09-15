@@ -1,0 +1,275 @@
+KẾ HOẠCH XÂY DỰNG EFORMEXCELSTRUCTUREEXTRACTOR-V1
+Phiên bản: 1.0
+Phạm vi: AI local trích xuất cấu trúc Excel và trả dữ liệu xem trước; không dùng LLM; không mapping DataField; không ghi document.
+
+======================================================================
+1. MỤC TIÊU CUỐI CÙNG
+======================================================================
+
+Đầu vào:
+- File .xlsx hoặc .xlsm thuộc nhóm biểu thống kê tương tự Data/Raw.
+
+Đầu ra trước khi người dùng bấm "Nhập dữ liệu":
+- Danh sách sheet.
+- Một hoặc nhiều vùng bảng trên mỗi sheet.
+- Tọa độ bắt đầu/kết thúc bảng.
+- Các dòng header nguyên bản.
+- Merged cells, mã cột, header_path và kiểu dữ liệu suy luận.
+- Ma trận value giữ nguyên thứ tự hàng/cột.
+- Cảnh báo và confidence về cấu trúc.
+
+Ngoài phạm vi model:
+- Không nhận hoặc hiểu DocumentContent.
+- Không chọn target DataField.
+- Không tạo FormConfig, ValueData hoặc SourceData.
+- Không kiểm tra required, sum rule, readonly, quyền người dùng.
+- Không post dữ liệu vào document và không ghi database.
+
+======================================================================
+2. KIẾN TRÚC ĐƯỢC CHỌN
+======================================================================
+
+Tên model: EFormExcelStructureExtractor-v1
+Loại model: mô hình sequence tagging/multi-task nhỏ chạy local.
+
+Đầu vào model là chuỗi các dòng/ô đã được parser Excel biến thành feature:
+- vị trí row/column;
+- kiểu ô text/number/date/formula/blank;
+- mẫu ký tự như A, B, (1), (2), I, 1, 1.1;
+- merged span;
+- bold, alignment, border, fill, number format;
+- mật độ ô trống và ô có dữ liệu;
+- feature hàng trước/hàng sau và cột lân cận.
+
+Nhãn model:
+- TITLE: tiêu đề báo cáo;
+- METADATA: đơn vị, kỳ báo cáo, biểu số;
+- HEADER: header thường/nhiều tầng;
+- COLUMN_CODE: dòng mã A, B, (1), (2), ...;
+- DATA: dòng dữ liệu;
+- FOOTER: chữ ký, người lập biểu, ghi chú cuối;
+- NOTE: ghi chú trong/ngoài bảng;
+- BLANK: dòng/ô rỗng;
+- TABLE_SEPARATOR: ranh giới giữa hai bảng.
+
+Model không phát sinh text hoặc số mới. Sau khi model dự đoán nhãn, code xác định sẽ cắt bảng, dựng header_path và copy raw_value/display_value/formula từ workbook.
+
+======================================================================
+3. GIAI ĐOẠN 0 - CHỐT CONTRACT VÀ BASELINE (TUẦN 1)
+======================================================================
+
+Đầu việc:
+1. Chốt JSON contract PreviewData v1.0.
+2. Chốt danh sách định dạng hỗ trợ: .xlsx/.xlsm; xác định rõ .xls, file khóa, file lỗi nằm ngoài phạm vi hoặc cần converter.
+3. Đóng băng bộ test đại diện: 09a một dòng, 04c phân cấp dài, 01d nhiều bảng, workbook 77 sheet.
+4. Chạy baseline parser hiện có trên toàn bộ Raw.
+5. Ghi lại lỗi theo nhóm: sai sheet, sai table range, sai header range, sai data range, mất merge, sai type.
+
+Đầu ra:
+- PreviewData schema v1.0.
+- Bộ golden workbook ban đầu.
+- Báo cáo baseline và danh sách lỗi.
+
+Điều kiện hoàn thành:
+- Frontend có thể render một response mẫu mà chưa cần DocumentContent.
+- Mọi giá trị trong response truy vết được về sheet/row/column gốc.
+
+======================================================================
+4. GIAI ĐOẠN 1 - KIỂM KÊ VÀ NHÓM DỮ LIỆU (TUẦN 1-2)
+======================================================================
+
+Nguồn hiện có:
+- 1.232 workbook.
+- 1.231 file nhận diện được mã biểu.
+- 27 mã biểu.
+- Phân bố mất cân bằng: riêng 09a có 722 file, 05b có 139 file; nhiều mã chỉ có 2-6 file.
+
+Đầu việc:
+1. Quét workbook, sheet, kích thước, merge, style, formula, hidden sheet.
+2. Tạo layout_fingerprint từ số cột, mã cột, header depth, merge geometry và nhãn chuẩn hóa.
+3. Gom file copy và các file cùng template vào một layout family.
+4. Chọn mẫu đại diện cho từng family; ưu tiên family hiếm và file lỗi.
+5. Không dùng tên đơn vị hoặc giá trị thống kê cụ thể làm đặc trưng quyết định.
+
+Đầu ra:
+- workbook_manifest.jsonl.
+- layout_families.jsonl.
+- Báo cáo phân bố và độ phủ.
+
+Điều kiện hoàn thành:
+- Mỗi workbook thuộc đúng một layout family.
+- Không có bản copy của cùng template bị coi là dữ liệu độc lập khi chia split.
+
+======================================================================
+5. GIAI ĐOẠN 2 - TẠO VÀ DUYỆT NHÃN (TUẦN 2-3)
+======================================================================
+
+Đầu việc:
+1. Dùng parser/rule hiện có tạo silver label cho row role và table boundary.
+2. Xây màn hình hoặc notebook duyệt theo layout family, không duyệt lặp 1.232 file.
+3. Người duyệt xác nhận/sửa:
+   - table_start/table_end;
+   - header_start/header_end;
+   - code_row;
+   - data_start/data_end;
+   - footer/notes;
+   - column roles và merge.
+4. Tạo gold label chỉ khi được human/reviewed xác nhận.
+5. Bổ sung negative cases: sheet bìa, bảng trống, footer dài, nhiều bảng, header thiếu mã, file lệch cột.
+
+Đầu ra:
+- Labels/structure_labels.jsonl.
+- Labels/review_queue.jsonl.
+- Samples/expected_preview/*.json.
+
+Điều kiện hoàn thành:
+- 100% layout family quan trọng có ít nhất một gold sample.
+- Tối thiểu 80% family và toàn bộ family có tần suất cao được duyệt trước lần train chính.
+
+======================================================================
+6. GIAI ĐOẠN 3 - CHIA DATASET VÀ XÂY BASELINE (TUẦN 3)
+======================================================================
+
+Đầu việc:
+1. Chia theo layout family: 70% Train, 15% Validation, 15% Test.
+2. Giữ toàn bộ sheet/bảng của một workbook trong cùng split.
+3. Tạo một challenge set chứa layout hiếm, nhiều sheet, nhiều bảng và footer phức tạp.
+4. Xây baseline rule-only từ mã cột, merge, mật độ numeric và từ khóa footer.
+5. Đánh giá baseline bằng cùng metric với model.
+
+Điều kiện hoàn thành:
+- Không có layout fingerprint trùng giữa các split chính.
+- Test labels tách khỏi input test.
+- Có baseline để chứng minh model thật sự cải thiện.
+
+======================================================================
+7. GIAI ĐOẠN 4 - XÂY VÀ HUẤN LUYỆN MODEL (TUẦN 4-5)
+======================================================================
+
+Kiến trúc v1 đề xuất:
+- Cell feature encoder.
+- Row pooling encoder.
+- 2-4 Transformer encoder layers theo chuỗi dòng trong sheet/window.
+- Multi-task heads: row_role, cell_role, table_boundary.
+- Quy mô nhỏ, mục tiêu chạy CPU; không sử dụng LLM.
+
+Loss:
+- Weighted cross-entropy cho class mất cân bằng.
+- Boundary loss tăng trọng số cho header_start, data_start và table_end.
+- Consistency loss nhẹ để hạn chế chuỗi nhãn vô lý, ví dụ FOOTER → DATA → TITLE.
+
+Huấn luyện:
+1. Chuẩn hóa feature và vocabulary ký tự/domain.
+2. Train với early stopping theo whole-table exact match trên Validation.
+3. Dùng class weight hoặc balanced sampler cho DocType/layout hiếm.
+4. Không chọn checkpoint theo training loss.
+5. Lưu model, feature config, label map và dataset version cùng nhau.
+
+Đầu ra:
+- model.onnx hoặc model.pt.
+- feature_config.json.
+- label_map.json.
+- training_metrics.json.
+- model_card.md.
+
+======================================================================
+8. GIAI ĐOẠN 5 - HẬU XỬ LÝ VÀ PREVIEW JSON (TUẦN 5)
+======================================================================
+
+Đầu việc:
+1. Biến chuỗi nhãn model thành các table range hợp lệ.
+2. Dựng header_rows bằng merge geometry và fill-forward có kiểm soát.
+3. Dựng header_path theo từng cột.
+4. Giữ rows dạng array để không mất cột có header trùng tên.
+5. Trả raw_value, display_value, value_type và formula khi cần.
+6. Trả confidence và issue nếu ranh giới không chắc chắn.
+7. Có fallback: cho người dùng chọn sheet/header/data range thủ công.
+
+Điều kiện hoàn thành:
+- Model không thể sửa raw value.
+- JSON luôn hợp lệ theo schema.
+- Mọi output cell có source coordinate.
+
+======================================================================
+9. GIAI ĐOẠN 6 - ĐÁNH GIÁ ĐỘC LẬP (TUẦN 6)
+======================================================================
+
+Metric bắt buộc:
+- Row-role macro F1.
+- Table detection precision/recall/F1.
+- Header boundary exact match.
+- Data boundary exact match.
+- Column count exact match.
+- Merge reconstruction F1.
+- Header text preservation.
+- Cell value preservation.
+- Whole-table exact match.
+- Workbook success rate.
+- Latency p50/p95 và memory.
+
+Mục tiêu nghiệm thu đề xuất, phải đo chứ không tuyên bố trước:
+- Cell value preservation = 100%.
+- Header text preservation = 100% đối với ô đã chọn đúng.
+- Table detection F1 >= 0,98 trên Test thuộc phạm vi.
+- Header/data boundary exact match >= 0,95.
+- Whole-table exact match >= 0,95 trên test độc lập.
+- File confidence thấp không được tự động coi là thành công.
+
+======================================================================
+10. GIAI ĐOẠN 7 - TÍCH HỢP PREVIEW (TUẦN 7)
+======================================================================
+
+API đề xuất:
+POST /api/excel/extract
+Input: file
+Output: PreviewData v1.0
+
+Luồng frontend:
+1. Upload file.
+2. Hiển thị sheet/table mà model phát hiện.
+3. Render header_rows + merged_cells + rows vào Handsontable.
+4. Người dùng chọn/sửa vùng nếu cần.
+5. Chỉ khi bấm "Nhập dữ liệu", frontend mới lấy DocumentContent/FormConfig.
+6. Frontend chạy mapping/validation hiện có và gửi IMPORT_EXCEL_DONE.
+
+Điều kiện hoàn thành:
+- API extract hoạt động không cần documentId.
+- Preview không thay đổi document.
+- Đóng preview hoặc lỗi model không gây thay đổi dữ liệu eForm.
+
+======================================================================
+11. GIAI ĐOẠN 8 - PILOT VÀ PHÁT HÀNH (TUẦN 8)
+======================================================================
+
+1. Chạy shadow mode: so kết quả model với thao tác hiện tại nhưng chưa tự áp dụng.
+2. Thử nghiệm với nhóm người dùng nhỏ và các DocType phổ biến/hiếm.
+3. Thu log chỉ về cấu trúc, không ghi dữ liệu nhạy cảm không cần thiết.
+4. Thu correction để tạo dataset phiên bản tiếp theo.
+5. Chỉ bật mặc định khi qua toàn bộ acceptance gate.
+
+======================================================================
+12. RỦI RO VÀ BIỆN PHÁP
+======================================================================
+
+- Dữ liệu lệch 09a: chia theo layout family và cân bằng sample.
+- Layout hiếm quá ít: ưu tiên review, augmentation cấu trúc, không bịa value.
+- Workbook cực lớn: streaming/chunk/window và giới hạn tài nguyên.
+- Nhiều bảng/sheet: output danh sách table, không ép chọn duy nhất.
+- Công thức không có cached value: giữ formula và phát cảnh báo.
+- Mã có số 0 đầu: giữ raw/display string, không ép numeric.
+- Model confidence cao nhưng sai: validation cấu trúc + fallback người dùng.
+- File ngoài phân phối: OOD rule và yêu cầu chọn vùng thủ công.
+
+======================================================================
+13. ĐỊNH NGHĨA HOÀN THÀNH
+======================================================================
+
+Dự án v1 chỉ hoàn thành khi:
+- Model chạy local, không dùng API LLM.
+- Có dataset version hóa và test độc lập theo layout family.
+- Giá trị output giống Excel 100%.
+- Preview thể hiện đúng header/value/merge trong phạm vi hỗ trợ.
+- Không cần DocumentContent để extract.
+- Không ghi hoặc sửa document trước thao tác xác nhận.
+- Giao diện cũ vẫn chịu trách nhiệm mapping, validation và import.
+- Có benchmark, model card, hướng dẫn fallback và danh sách giới hạn rõ ràng.
