@@ -1,0 +1,281 @@
+{
+  "recordedAtUtc": "2026-09-16T14:05:43.1916030Z",
+  "scope": "C# service calling real FastAPI; injected transport faults; isolated EF6 JSON archive test. No UI. No production database.",
+  "runtime": "4.0.30319.42000",
+  "cases": [
+    {
+      "id": "TC01",
+      "name": "C# doc health tu FastAPI dang chay",
+      "status": "PASS",
+      "expected": "status=ready",
+      "actual": "{\"status\":\"ready\",\"serviceVersion\":\"1.0.0\",\"model\":{\"name\":\"eform_excel_table_extractor_v1\",\"format\":\"eformmodel-1.0\",\"device\":\"cpu\",\"artifact\":\"eform_excel_table_extractor_v1.eformmodel\"}}",
+      "kind": "runtime"
+    },
+    {
+      "id": "TC02",
+      "name": "Tu choi stream rong",
+      "status": "PASS",
+      "expected": "Success=false",
+      "actual": "File Excel rỗng.",
+      "kind": "runtime"
+    },
+    {
+      "id": "TC03",
+      "name": "Tu choi tep khong phai Excel",
+      "status": "PASS",
+      "expected": "Success=false",
+      "actual": "Chỉ chấp nhận file .xlsx hoặc .xlsm.",
+      "kind": "runtime"
+    },
+    {
+      "id": "TC04",
+      "name": "C# nhan JSON model tu workbook 1",
+      "status": "PASS",
+      "expected": "Success=true, SchemaVersion=2.0",
+      "actual": "success=True; schema=2.0; tables=1",
+      "kind": "runtime"
+    },
+    {
+      "id": "TC05",
+      "name": "C# nhan JSON model tu workbook 2",
+      "status": "PASS",
+      "expected": "Success=true, SchemaVersion=2.0",
+      "actual": "success=True; schema=2.0; tables=1",
+      "kind": "runtime"
+    },
+    {
+      "id": "TC06",
+      "name": "Bao toan co requiresReview va warnings",
+      "status": "PASS",
+      "expected": "Flags and warnings unchanged",
+      "actual": "requiresReview=True; warnings=1",
+      "kind": "runtime"
+    },
+    {
+      "id": "TC07",
+      "name": "Xu ly phan hoi HTTP 200 nhung JSON loi cu phap",
+      "status": "PASS",
+      "expected": "Success=false and JSON error",
+      "actual": "AI service trả JSON không hợp lệ: Unexpected character encountered while parsing value: b. Path 'sheets', line 1, position 11.",
+      "kind": "fault-injection"
+    },
+    {
+      "id": "TC08",
+      "name": "Xu ly HTTP 415 tu AI",
+      "status": "PASS",
+      "expected": "Success=false and preserve detail",
+      "actual": "AI service từ chối workbook: Injected unsupported workbook",
+      "kind": "fault-injection"
+    },
+    {
+      "id": "TC09",
+      "name": "Tu choi JSON sai schemaVersion va data sai kieu",
+      "status": "FAIL",
+      "expected": "Success=false because schema invalid",
+      "actual": "success=True; schema=999; Data type=JValue",
+      "kind": "fault-injection"
+    },
+    {
+      "id": "TC10",
+      "name": "Xu ly AI qua timeout 5 giay",
+      "status": "PASS",
+      "expected": "Success=false with timeout message",
+      "actual": "AI service xử lý quá thời gian cho phép. A task was canceled.",
+      "kind": "fault-injection"
+    },
+    {
+      "id": "TC11",
+      "name": "Xu ly khong ket noi duoc AI",
+      "status": "PASS",
+      "expected": "Success=false",
+      "actual": "Không kết nối được AI service: An error occurred while sending the request.",
+      "kind": "fault-injection"
+    },
+    {
+      "id": "TC12",
+      "name": "Repository ghi va doc lai JSON trong LocalDB",
+      "status": "PASS",
+      "expected": "1 ban ghi, JSON doc lai trung nguyen ban",
+      "actual": "records=1; jsonEqual=True",
+      "kind": "runtime"
+    },
+    {
+      "id": "TC13",
+      "name": "Repository tu choi ban ghi thieu DocumentId",
+      "status": "PASS",
+      "expected": "EF validation rejects missing DocumentId",
+      "actual": "rejected=True",
+      "kind": "runtime"
+    },
+    {
+      "id": "AC01",
+      "name": "Anh xa vao chi tieu nghiep vu",
+      "status": "GAP",
+      "expected": "RowMappings has verified target identifiers",
+      "actual": "Production response sets RowMappings to an empty array",
+      "kind": "source-inspection"
+    },
+    {
+      "id": "AC02",
+      "name": "Luong ImportAsync goi Repository va luu so lieu",
+      "status": "GAP",
+      "expected": "Connected orchestration and successful business readback",
+      "actual": "Production ImportService has no repository dependency or SaveAsync call; import_records stores JSON only",
+      "kind": "source-inspection"
+    },
+    {
+      "id": "AC03",
+      "name": "Giao dich, chong nhap lap va phan quyen Document",
+      "status": "GAP",
+      "expected": "Verified commit, rollback, idempotency and authorization",
+      "actual": "Not implemented or not available in inspected backend flow",
+      "kind": "source-inspection"
+    },
+    {
+      "id": "VC01",
+      "name": "Đối chiếu từng ô JSON qua C# với Excel nguồn 1",
+      "status": "PASS",
+      "expected": "0 ô sai khác trong vùng được trả về",
+      "actual": "cells=91; mismatch=0",
+      "kind": "independent-source-comparison"
+    },
+    {
+      "id": "VC02",
+      "name": "Đối chiếu từng ô JSON qua C# với Excel nguồn 2",
+      "status": "PASS",
+      "expected": "0 ô sai khác trong vùng được trả về",
+      "actual": "cells=4656; mismatch=0",
+      "kind": "independent-source-comparison"
+    }
+  ],
+  "workbooks": [
+    {
+      "sourceFile": "Sở Giáo dục và đào tạo_21a_TP_HTPLDN_Kết quả triển khai công tác hỗ trợ phá(...).xlsx",
+      "sourcePath": "C:\\Users\\hoang\\Downloads\\eform_btp\\Module\\AI Import\\Data\\Raw\\Sở Giáo dục và đào tạo_21a_TP_HTPLDN_Kết quả triển khai công tác hỗ trợ phá(...).xlsx",
+      "backendResponseFile": "backend_response_actual.json",
+      "schemaVersion": "2.0",
+      "tableCount": 1,
+      "requiresReview": true,
+      "warningsCount": 1,
+      "rowMappingsCount": 0,
+      "sourceRanges": [
+        "A2:M8"
+      ],
+      "rowsMetadataCount": 1,
+      "columnsMetadataCount": 13,
+      "sourceSha256": "0A87CC43B43834EDA6B469609747D4A1186781DB2BFBC2419819B68A7B4CF9C7",
+      "sourceComparison": {
+        "cellsCompared": 91,
+        "mismatchCount": 0,
+        "mismatches": [],
+        "scope": "Only cells inside the model-returned region; not a gold-label test of table boundaries."
+      },
+      "tables": [
+        {
+          "sheetName": "21a",
+          "sourceRange": "A2:M8",
+          "rowCount": 7,
+          "columnCount": 13,
+          "headerRows": 6,
+          "valueRowCount": 1,
+          "mergeCellsCount": 17,
+          "hierarchyRowsCount": 1,
+          "columnPathsCount": 13,
+          "formulaCellsCount": 0
+        }
+      ]
+    },
+    {
+      "sourceFile": "Sở Tư pháp Tỉnh Thanh Hóa_04c_TP_PBGDPL_Kết quả công tác phổ biến giáo dục(...).xlsx",
+      "sourcePath": "C:\\Users\\hoang\\Downloads\\eform_btp\\Module\\AI Import\\Data\\Raw\\Sở Tư pháp Tỉnh Thanh Hóa_04c_TP_PBGDPL_Kết quả công tác phổ biến giáo dục(...).xlsx",
+      "backendResponseFile": "backend_response_actual.json",
+      "schemaVersion": "2.0",
+      "tableCount": 1,
+      "requiresReview": true,
+      "warningsCount": 1,
+      "rowMappingsCount": 0,
+      "sourceRanges": [
+        "A2:X195"
+      ],
+      "rowsMetadataCount": 188,
+      "columnsMetadataCount": 24,
+      "sourceSha256": "806F4BAE3DCA9FAC64F883DD91C95ECED5047E9A3D96CFC06A88E89985ED85F6",
+      "sourceComparison": {
+        "cellsCompared": 4656,
+        "mismatchCount": 0,
+        "mismatches": [],
+        "scope": "Only cells inside the model-returned region; not a gold-label test of table boundaries."
+      },
+      "tables": [
+        {
+          "sheetName": "04c",
+          "sourceRange": "A2:X195",
+          "rowCount": 194,
+          "columnCount": 24,
+          "headerRows": 6,
+          "valueRowCount": 188,
+          "mergeCellsCount": 27,
+          "hierarchyRowsCount": 188,
+          "columnPathsCount": 24,
+          "formulaCellsCount": 0
+        }
+      ]
+    },
+    {
+      "archiveOnly": true,
+      "database": "eform_week6_evidence_982a7729c87a4b07bba189ef1938f828",
+      "jsonSha256": "295E90DB92C769CE7C43093733D26E41D2EB2ABC6399A722841D1099F47846DC",
+      "readbackSha256": "295E90DB92C769CE7C43093733D26E41D2EB2ABC6399A722841D1099F47846DC",
+      "equal": true,
+      "caller": "test harness constructs ImportRecord; production ImportService does not save"
+    }
+  ],
+  "testDatabase": "eform_week6_evidence_982a7729c87a4b07bba189ef1938f828",
+  "testDatabaseRemoved": true,
+  "summary": {
+    "pass": 14,
+    "fail": 1,
+    "blocked": 0,
+    "gaps": 3
+  },
+  "sourceFiles": [
+    {
+      "path": "ImportDocument.Application/Service/ImportService.cs",
+      "sha256": "D40E4657454F5BFE43583E5B836E15E30463A1EB040F9C184D499D52D616D034"
+    },
+    {
+      "path": "ImportDocument.Application/Service/IImportService.cs",
+      "sha256": "BE40D23760AAB984E64B2040F2B1B527598A2F90E4CD4C80B8DB4B1F3B0678DD"
+    },
+    {
+      "path": "ImportDocument.Application/Dto/ImportResponseDto.cs",
+      "sha256": "04AD55F225CDAF2B783A1CCEB79D4CDC69CE4386161D3ECC93844710E5008F15"
+    },
+    {
+      "path": "ImportDocumentAPI/Controllers/ImportController.cs",
+      "sha256": "6884249B41F97DA300953282243F442890A528809EE90F716B5F3D675DFD2E17"
+    },
+    {
+      "path": "ImportDocument.Infrastructure/Repository/ImportRepository.cs",
+      "sha256": "B010CC32CEB7EFF583976588DA96235716F4A169485C14FEED3A29E842480668"
+    },
+    {
+      "path": "ImportDocument.Infrastructure/ImportDbContext.cs",
+      "sha256": "7CC704F8397F234111C21BAA9B387E0CA02A54708C9156DB104D5D9D005A8614"
+    },
+    {
+      "path": "ImportDocument.Infrastructure/Configuration/DatabaseConfiguration.cs",
+      "sha256": "7A58845F19A41279266C11B6A83544FA2D9D65B08AA38A7465CBFA34560152FD"
+    },
+    {
+      "path": "ImportDocument.Domain/Entity/ImportRecord.cs",
+      "sha256": "22CA4882A8D8F767A3080F2AD36D7A3839726353EE573BA6A3A808E69E753950"
+    },
+    {
+      "path": "ImportDocument.Domain/IRepository/IImportRepository.cs",
+      "sha256": "FC62F2CE79A25388A963021907EA5B61F367DA9233E118C9EB4A37AC42135075"
+    }
+  ],
+  "verificationNote": "Original C# cases retained; VC cases independently added by openpyxl source comparison. GAP cases are source-inspection findings, not executed business imports.",
+  "combinedCaptureSha256": "98971F3E5F9B5B9C44BAB30DE7C1F8B0B5EEF6E27169DDA9BCDD559C36F727F1"
+}

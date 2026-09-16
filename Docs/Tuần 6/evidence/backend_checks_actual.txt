@@ -1,0 +1,20 @@
+WEEK 6 BACKEND CHECKS | 2026-09-16T14:05:24.4122615Z
+Exact production C# sources compiled; no frontend or production DB used.
+TC01 | PASS | C# doc health tu FastAPI dang chay | {"status":"ready","serviceVersion":"1.0.0","model":{"name":"eform_excel_table_extractor_v1","format":"eformmodel-1.0","device":"cpu","artifact":"eform_excel_table_extractor_v1.eformmodel"}}
+TC02 | PASS | Tu choi stream rong | File Excel rỗng.
+TC03 | PASS | Tu choi tep khong phai Excel | Chỉ chấp nhận file .xlsx hoặc .xlsm.
+TC04 | PASS | C# nhan JSON model tu workbook 1 | success=True; schema=2.0; tables=1
+TC05 | PASS | C# nhan JSON model tu workbook 2 | success=True; schema=2.0; tables=1
+TC06 | PASS | Bao toan co requiresReview va warnings | requiresReview=True; warnings=1
+TC07 | PASS | Xu ly phan hoi HTTP 200 nhung JSON loi cu phap | AI service trả JSON không hợp lệ: Unexpected character encountered while parsing value: b. Path 'sheets', line 1, position 11.
+TC08 | PASS | Xu ly HTTP 415 tu AI | AI service từ chối workbook: Injected unsupported workbook
+TC09 | FAIL | Tu choi JSON sai schemaVersion va data sai kieu | success=True; schema=999; Data type=JValue
+TC10 | PASS | Xu ly AI qua timeout 5 giay | AI service xử lý quá thời gian cho phép. A task was canceled.
+TC11 | PASS | Xu ly khong ket noi duoc AI | Không kết nối được AI service: An error occurred while sending the request.
+TC12 | PASS | Repository ghi va doc lai JSON trong LocalDB | records=1; jsonEqual=True
+TC13 | PASS | Repository tu choi ban ghi thieu DocumentId | rejected=True
+TEST DATABASE CLEANUP | eform_week6_evidence_982a7729c87a4b07bba189ef1938f828 | removed=True
+AC01 | GAP | Anh xa vao chi tieu nghiep vu | Production response sets RowMappings to an empty array
+AC02 | GAP | Luong ImportAsync goi Repository va luu so lieu | Production ImportService has no repository dependency or SaveAsync call; import_records stores JSON only
+AC03 | GAP | Giao dich, chong nhap lap va phan quyen Document | Not implemented or not available in inspected backend flow
+SUMMARY | {"pass":12,"fail":1,"blocked":0,"gaps":3}
