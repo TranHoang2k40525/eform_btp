@@ -8,12 +8,12 @@ import time
 import zipfile
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse
 from openpyxl.utils.exceptions import InvalidFileException
+from pydantic import BaseModel, ConfigDict, Field
 
 
 MODULE_ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +32,116 @@ MAX_UNCOMPRESSED_BYTES = int(
     os.getenv("EFORM_MAX_UNCOMPRESSED_BYTES", str(500 * 1024 * 1024))
 )
 REVIEW_THRESHOLD = float(os.getenv("EFORM_REVIEW_THRESHOLD", "0.75"))
+
+
+class ContractModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class ModelInfoResponse(ContractModel):
+    name: str
+    format: str
+    device: str
+    artifact: str
+
+
+class HealthResponse(ContractModel):
+    status: Literal["ready"]
+    serviceVersion: str
+    model: ModelInfoResponse
+
+
+class MergeCellResponse(ContractModel):
+    row: int = Field(ge=0)
+    col: int = Field(ge=0)
+    rowspan: int = Field(ge=1)
+    colspan: int = Field(ge=1)
+
+
+class ColumnResponse(ContractModel):
+    columnIndex: int = Field(ge=0)
+    excelColumn: str
+    headerPath: list[str]
+    label: str
+    columnCode: str
+
+
+class RowResponse(ContractModel):
+    rowIndex: int = Field(ge=0)
+    excelRow: int = Field(ge=1)
+    rowType: Literal[
+        "grand_total",
+        "section",
+        "item",
+        "subitem",
+        "detail",
+        "data",
+        "empty",
+        "unclassified",
+    ]
+    level: int | None = Field(default=None, ge=0)
+    code: str
+    label: str
+    parentRowIndex: int | None = Field(default=None, ge=0)
+    hierarchyPath: list[str]
+    mappingConfidence: float = Field(ge=0.0, le=1.0)
+    requiresReview: bool
+    reason: str
+
+
+class TableResponse(ContractModel):
+    sourceRange: str
+    headerRows: int = Field(ge=1)
+    rowCount: int = Field(ge=1)
+    columnCount: int = Field(ge=1)
+    valueRowCount: int = Field(ge=0)
+    data: list[list[Any]]
+    mergeCells: list[MergeCellResponse]
+    columns: list[ColumnResponse]
+    rows: list[RowResponse]
+    rowHierarchySummary: dict[str, int]
+    columnWidths: list[int]
+    rowHeights: list[int]
+    cellStyles: list[dict[str, Any]]
+    formulaCells: list[dict[str, Any]]
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    postprocessing: str | None = None
+    trimmedFooterRows: int = Field(ge=0)
+
+
+class SheetResponse(ContractModel):
+    sheetIndex: int = Field(ge=0)
+    sheetName: str
+    sheetState: str
+    tables: list[TableResponse]
+
+
+class SummaryResponse(ContractModel):
+    sheetCount: int = Field(ge=0)
+    tableCount: int = Field(ge=0)
+    rowCount: int = Field(ge=0)
+    valueRowCount: int = Field(ge=0)
+    cellCount: int = Field(ge=0)
+    ambiguousRowCount: int = Field(ge=0)
+    lowConfidenceTableCount: int = Field(ge=0)
+    uploadBytes: int = Field(ge=0)
+
+
+class ExtractResponse(ContractModel):
+    schemaVersion: Literal["2.0"]
+    model: str
+    modelFormat: str
+    device: str
+    sourceFile: str
+    summary: SummaryResponse
+    sheets: list[SheetResponse]
+    durationMs: float = Field(ge=0.0)
+    requiresReview: bool
+    warnings: list[str]
+
+
+class ErrorResponse(ContractModel):
+    detail: Any
 
 
 def _model_path() -> Path:
@@ -87,27 +197,36 @@ app = FastAPI(
 )
 
 
-@app.get("/health")
-async def health() -> dict[str, Any]:
+@app.get("/health", response_model=HealthResponse)
+async def health() -> HealthResponse:
     predictor: EFormPredictor = app.state.predictor
-    return {
+    return HealthResponse.model_validate({
         "status": "ready",
         "serviceVersion": SERVICE_VERSION,
         "model": predictor.model_info,
-    }
+    })
 
 
-@app.get("/api/eform/model")
-async def model_info() -> dict[str, Any]:
+@app.get("/api/eform/model", response_model=ModelInfoResponse)
+async def model_info() -> ModelInfoResponse:
     predictor: EFormPredictor = app.state.predictor
-    return predictor.model_info
+    return ModelInfoResponse.model_validate(predictor.model_info)
 
 
-@app.post("/api/eform/extract")
+@app.post(
+    "/api/eform/extract",
+    response_model=ExtractResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        413: {"model": ErrorResponse},
+        415: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+    },
+)
 async def extract(
     file: UploadFile = File(...),
     originalFileName: str | None = Form(default=None),
-) -> JSONResponse:
+) -> ExtractResponse:
     original_name = Path(originalFileName or file.filename or "").name
     extension = Path(original_name).suffix.lower()
     if extension not in ALLOWED_EXTENSIONS:
@@ -138,15 +257,23 @@ async def extract(
         for table in tables
         if table.get("confidence") is None or float(table["confidence"]) < REVIEW_THRESHOLD
     )
+    ambiguous_rows = sum(
+        int(table.get("rowHierarchySummary", {}).get("requiresReview", 0))
+        for table in tables
+    )
     result["summary"]["lowConfidenceTableCount"] = low_confidence
+    result["summary"]["ambiguousRowCount"] = ambiguous_rows
     result["summary"]["uploadBytes"] = upload_size
     result["durationMs"] = round((time.perf_counter() - started) * 1000, 2)
-    result["requiresReview"] = not tables or low_confidence > 0
-    result["warnings"] = (
-        ["AI chưa phát hiện được vùng bảng trong workbook."]
-        if not tables
-        else ["Có vùng bảng độ tin cậy thấp, cần kiểm tra trước khi nhập."]
-        if low_confidence
-        else []
-    )
-    return JSONResponse(result)
+    result["requiresReview"] = not tables or low_confidence > 0 or ambiguous_rows > 0
+    warnings: list[str] = []
+    if not tables:
+        warnings.append("AI chưa phát hiện được vùng bảng trong workbook.")
+    if low_confidence:
+        warnings.append("Có vùng bảng độ tin cậy thấp, cần kiểm tra trước khi nhập.")
+    if ambiguous_rows:
+        warnings.append(
+            f"Có {ambiguous_rows} hàng chưa đủ căn cứ xác định cấp, cần kiểm tra."
+        )
+    result["warnings"] = warnings
+    return ExtractResponse.model_validate(result)

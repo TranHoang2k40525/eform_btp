@@ -40,6 +40,11 @@ NUMBER_IN_TEXT_RE = re.compile(r"\d+(?:[.,]\d+)*")
 FOOTER_TEXT_RE = re.compile(
     r"\b(ghi chu|nguoi lap bieu|nguoi kiem tra|ky,|dong dau|thu truong|giam doc)\b"
 )
+TOTAL_ROW_RE = re.compile(r"^(tong so|tong cong|cong chung)(?:\b|$)")
+ROMAN_ROW_RE = re.compile(r"^[ivxlcdm]+$", re.IGNORECASE)
+INTEGER_ROW_RE = re.compile(r"^\d+$")
+DECIMAL_ROW_RE = re.compile(r"^\d+(?:\.\d+)+$")
+SECTION_LABEL_RE = re.compile(r"^(?:muc|phan)\s+([ivxlcdm]+)(?:\b|$)")
 
 
 def seed_everything(seed: int) -> None:
@@ -684,6 +689,161 @@ def _header_paths(
     return result
 
 
+def _normalized_row_code(value: Any) -> str:
+    text = clean_text(value)
+    if len(text) >= 2 and text[0] == "(" and text[-1] == ")":
+        text = text[1:-1].strip()
+    return re.sub(r"[\s.):]+$", "", text).strip()
+
+
+def _row_identity_columns(
+    data: list[list[Any]],
+    columns: list[dict[str, Any]],
+    header_rows: int,
+) -> tuple[int | None, int | None]:
+    if not data or not data[0]:
+        return None, None
+    column_count = len(data[0])
+    code_column: int | None = None
+    label_column: int | None = None
+    for column in columns:
+        index = int(column["columnIndex"])
+        labels = " ".join([*column.get("headerPath", []), column.get("label", "")])
+        folded = fold_text(labels)
+        if code_column is None and re.search(r"\b(stt|so thu tu)\b", folded):
+            code_column = index
+        if label_column is None and re.search(
+            r"\b(chi tieu|noi dung|ten don vi|don vi|co quan|to chuc)\b",
+            folded,
+        ):
+            label_column = index
+
+    value_rows = data[header_rows:]
+    if code_column is None:
+        for candidate in range(min(2, column_count)):
+            matches = 0
+            for row in value_rows:
+                code = _normalized_row_code(row[candidate])
+                if (
+                    ROMAN_ROW_RE.fullmatch(code)
+                    or INTEGER_ROW_RE.fullmatch(code)
+                    or DECIMAL_ROW_RE.fullmatch(code)
+                ):
+                    matches += 1
+            if matches >= max(2, math.ceil(len(value_rows) * 0.10)):
+                code_column = candidate
+                break
+
+    if label_column is None:
+        if code_column is not None and code_column + 1 < column_count:
+            label_column = code_column + 1
+        else:
+            label_column = 0
+    if code_column == label_column:
+        code_column = None
+    return code_column, label_column
+
+
+def _row_hierarchy(
+    data: list[list[Any]],
+    columns: list[dict[str, Any]],
+    header_rows: int,
+    top: int,
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """Classify source rows conservatively and preserve uncertain cases for review."""
+    code_column, label_column = _row_identity_columns(data, columns, header_rows)
+    hierarchy: list[dict[str, Any]] = []
+    stack: dict[int, dict[str, Any]] = {}
+    counts: defaultdict[str, int] = defaultdict(int)
+
+    for row_index in range(header_rows, len(data)):
+        row = data[row_index]
+        code = _normalized_row_code(row[code_column]) if code_column is not None else ""
+        label = clean_text(row[label_column]) if label_column is not None else ""
+        folded_label = fold_text(label)
+        nonempty = sum(bool(clean_text(value)) for value in row)
+        row_type = "data"
+        level: int | None = None
+        confidence = 0.90
+        requires_review = False
+        reason = "Hàng dữ liệu không mang mã phân cấp."
+
+        if nonempty == 0:
+            row_type = "empty"
+            confidence = 1.0
+            reason = "Hàng trống được bảo toàn theo tệp Excel nguồn."
+        elif TOTAL_ROW_RE.search(folded_label):
+            row_type = "grand_total"
+            level = 0
+            confidence = 1.0
+            reason = "Nhãn hàng bắt đầu bằng Tổng số/Tổng cộng/Cộng chung."
+        else:
+            section_from_label = SECTION_LABEL_RE.search(folded_label)
+            if section_from_label and not code:
+                code = section_from_label.group(1).upper()
+            if ROMAN_ROW_RE.fullmatch(code):
+                row_type = "section"
+                level = 1
+                confidence = 0.99
+                reason = "Mã hàng là số La Mã."
+            elif DECIMAL_ROW_RE.fullmatch(code):
+                row_type = "subitem"
+                level = 2 + code.count(".")
+                confidence = 0.99
+                reason = "Mã hàng là chuỗi số phân cấp có dấu chấm."
+            elif INTEGER_ROW_RE.fullmatch(code):
+                row_type = "item"
+                level = 2
+                confidence = 0.99
+                reason = "Mã hàng là số thứ tự thuộc mục gần nhất."
+            elif label:
+                row_type = "detail" if not code else "unclassified"
+                deepest = max(stack, default=0)
+                level = deepest + 1 if stack else None
+                confidence = 0.72 if not code else 0.50
+                requires_review = True
+                reason = (
+                    "Hàng có nhãn nhưng thiếu mã phân cấp; giữ theo ngữ cảnh và yêu cầu kiểm tra."
+                    if not code
+                    else "Mã hàng không thuộc các mẫu phân cấp đã công bố."
+                )
+
+        parent_row_index: int | None = None
+        parent_path: list[str] = []
+        if level is not None:
+            parent_levels = [candidate for candidate in stack if candidate < level]
+            if parent_levels:
+                parent = stack[max(parent_levels)]
+                parent_row_index = int(parent["rowIndex"])
+                parent_path = list(parent["hierarchyPath"])
+            for candidate in [candidate for candidate in stack if candidate >= level]:
+                del stack[candidate]
+
+        display_label = label or code
+        hierarchy_path = [*parent_path, display_label] if display_label else parent_path
+        item = {
+            "rowIndex": row_index,
+            "excelRow": top + row_index,
+            "rowType": row_type,
+            "level": level,
+            "code": code,
+            "label": label,
+            "parentRowIndex": parent_row_index,
+            "hierarchyPath": hierarchy_path,
+            "mappingConfidence": confidence,
+            "requiresReview": requires_review,
+            "reason": reason,
+        }
+        hierarchy.append(item)
+        counts[row_type] += 1
+        if requires_review:
+            counts["requiresReview"] += 1
+        if level is not None and row_type not in {"empty", "data", "unclassified"}:
+            stack[level] = item
+
+    return hierarchy, dict(sorted(counts.items()))
+
+
 def extract_table_payload_with_values(
     worksheet: Any,
     table: dict[str, Any],
@@ -757,6 +917,13 @@ def extract_table_payload_with_values(
     sorted_merges = sorted(merges, key=lambda item: (item["row"], item["col"]))
     rows = bottom - top + 1
     columns = right - left + 1
+    column_metadata = _header_paths(data, sorted_merges, header_rows, left)
+    row_metadata, hierarchy_summary = _row_hierarchy(
+        data,
+        column_metadata,
+        header_rows,
+        top,
+    )
     return {
         "sourceRange": f"{get_column_letter(left)}{top}:{get_column_letter(right)}{bottom}",
         "headerRows": header_rows,
@@ -765,7 +932,9 @@ def extract_table_payload_with_values(
         "valueRowCount": max(0, rows - header_rows),
         "data": data,
         "mergeCells": sorted_merges,
-        "columns": _header_paths(data, sorted_merges, header_rows, left),
+        "columns": column_metadata,
+        "rows": row_metadata,
+        "rowHierarchySummary": hierarchy_summary,
         "columnWidths": [_column_width_px(worksheet, column) for column in range(left, right + 1)],
         "rowHeights": [
             _row_height_px(worksheet, row, row < top + header_rows)
@@ -873,7 +1042,7 @@ class EFormPredictor:
 
         tables = [table for sheet in sheets for table in sheet["tables"]]
         return {
-            "schemaVersion": "1.0",
+            "schemaVersion": "2.0",
             "model": self.checkpoint["model_name"],
             "modelFormat": self.checkpoint["format_version"],
             "device": str(self.device),
@@ -884,6 +1053,10 @@ class EFormPredictor:
                 "rowCount": sum(table["rowCount"] for table in tables),
                 "valueRowCount": sum(table["valueRowCount"] for table in tables),
                 "cellCount": sum(table["rowCount"] * table["columnCount"] for table in tables),
+                "ambiguousRowCount": sum(
+                    int(table["rowHierarchySummary"].get("requiresReview", 0))
+                    for table in tables
+                ),
             },
             "sheets": sheets,
         }
