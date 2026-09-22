@@ -1,0 +1,372 @@
+{
+  "startedAt": "2026-09-16T15:05:28.568Z",
+  "host": "http://localhost:5077",
+  "server": "Existing ASP.NET MVC/Web API application hosted through IIS Express",
+  "aiUrl": "http://127.0.0.1:8010/api/eform/extract",
+  "scope": "File selection, drag/drop, client validation, AJAX, busy/error/retry states; no grid or database assessment",
+  "viewport": {
+    "width": 1440,
+    "height": 960
+  },
+  "raw": {
+    "fileName": "Sở Giáo dục và đào tạo_21a_TP_HTPLDN_Kết quả triển khai công tác hỗ trợ phá(...).xlsx",
+    "bytes": 60161,
+    "sha256": "0A87CC43B43834EDA6B469609747D4A1186781DB2BFBC2419819B68A7B4CF9C7"
+  },
+  "source": [
+    {
+      "file": "Views/Home/Index.cshtml",
+      "sha256": "2D359C17FE22AEFB287DD128752B80D5EE7838FEDEB50B8A39FBF69DE20BF2C2"
+    },
+    {
+      "file": "Scripts/import-preview.js",
+      "sha256": "028799D56A3B6B980EA9710C5ADB59C3F48AB85D06B1C73FF5207C990281E3BF"
+    },
+    {
+      "file": "Content/import.css",
+      "sha256": "82E525C29F99F5EBCDE9817C392C27E4CF31D378F7783252290F9D5BB9AF2603"
+    },
+    {
+      "file": "Content/bootstrap.css",
+      "sha256": "D170052C16CAEC3810F2DEE6456539045D8E326F6D8ED7C7F78E59ED34DE348A"
+    }
+  ],
+  "tests": [
+    {
+      "id": "UI01",
+      "name": "Existing UI loads through IIS Express",
+      "status": "PASS",
+      "details": {
+        "httpStatus": 200,
+        "title": "Xem trước dữ liệu Excel | eForm",
+        "iframeCount": 0
+      }
+    },
+    {
+      "id": "UI02",
+      "name": "Health request reaches C# and the real loaded model",
+      "status": "PASS",
+      "details": {
+        "httpStatus": 200,
+        "health": {
+          "status": "ready",
+          "serviceVersion": "1.0.0",
+          "model": {
+            "name": "eform_excel_table_extractor_v1",
+            "format": "eformmodel-1.0",
+            "device": "cpu",
+            "artifact": "eform_excel_table_extractor_v1.eformmodel"
+          }
+        }
+      }
+    },
+    {
+      "id": "UI03",
+      "name": "Both selection buttons open the native file chooser",
+      "status": "PASS",
+      "details": {
+        "buttons": [
+          "#import",
+          "#emptyImport"
+        ],
+        "multiple": false
+      }
+    },
+    {
+      "id": "UI04",
+      "name": "Non-Excel extension is rejected before POST",
+      "status": "PASS",
+      "details": {
+        "postRequestsAdded": 0,
+        "statusText": "Chỉ chấp nhận file .xlsx hoặc .xlsm."
+      }
+    },
+    {
+      "id": "UI05",
+      "name": "A synthetic file larger than 50 MiB is rejected before POST",
+      "status": "PASS",
+      "details": {
+        "syntheticBytes": 52428801,
+        "postRequestsAdded": 0,
+        "statusText": "File Excel vượt giới hạn 50 MB."
+      }
+    },
+    {
+      "id": "UI06",
+      "name": "Real Raw workbook is sent by multipart fetch and receives real C# JSON",
+      "status": "PASS",
+      "details": {
+        "httpStatus": 200,
+        "sha256": "E6095DB3A08716401C3EA7ECD3F236541D00AC3C92D22011AD85C93237EBE375",
+        "success": true,
+        "message": "AI đã tách dữ liệu. Hãy kiểm tra bản xem trước trước khi nhập.",
+        "schemaVersion": "2.0",
+        "sourceFile": "Sở Giáo dục và đào tạo_21a_TP_HTPLDN_Kết quả triển khai công tác hỗ trợ phá(...).xlsx",
+        "requiresReview": true,
+        "summary": {
+          "sheetCount": 1,
+          "tableCount": 1,
+          "rowCount": 7,
+          "valueRowCount": 1,
+          "cellCount": 91,
+          "ambiguousRowCount": 1,
+          "lowConfidenceTableCount": 0,
+          "uploadBytes": 60161
+        },
+        "tableRanges": [
+          {
+            "sheetName": "21a",
+            "sourceRange": "A2:M8"
+          }
+        ]
+      }
+    },
+    {
+      "id": "UI07",
+      "name": "Busy state locks both pickers and ignores a second file drop",
+      "status": "PASS",
+      "details": {
+        "busyControlsDisabled": true,
+        "outgoingRequests": 1,
+        "requestHold": "Test-only, before network transmission; real route resumed immediately after screenshot"
+      }
+    },
+    {
+      "id": "UI08",
+      "name": "Upload does not reload or navigate the page",
+      "status": "PASS",
+      "details": {
+        "documentRequests": 1,
+        "originalDocumentTokenPreserved": true,
+        "url": "http://localhost:5077/"
+      }
+    },
+    {
+      "id": "UI09",
+      "name": "File input resets and permits selecting the same Raw file again",
+      "status": "PASS",
+      "details": {
+        "addedRequests": 1,
+        "inputValueAfterResponse": ""
+      }
+    },
+    {
+      "id": "UI10",
+      "name": "Invalid workbook is rejected through the actual C# and AI route",
+      "status": "PASS",
+      "details": {
+        "httpStatus": 200,
+        "success": false,
+        "message": "AI service từ chối workbook: File tải lên không phải workbook Excel Open XML hợp lệ.",
+        "statusText": "AI service từ chối workbook: File tải lên không phải workbook Excel Open XML hợp lệ."
+      }
+    },
+    {
+      "id": "UI11",
+      "name": "Controlled HTTP error is displayed and controls are released",
+      "status": "PASS",
+      "details": {
+        "injected": true,
+        "httpStatus": 503,
+        "statusText": "TEST_ONLY_HTTP_503",
+        "pickerReenabled": true
+      }
+    },
+    {
+      "id": "UI12",
+      "name": "Controlled non-JSON response is caught without reloading",
+      "status": "PASS",
+      "details": {
+        "injected": true,
+        "statusText": "Backend trả dữ liệu không đúng định dạng JSON.",
+        "documentTokenPreserved": true
+      }
+    },
+    {
+      "id": "UI13",
+      "name": "390px layout keeps selection button accessible without horizontal overflow",
+      "status": "PASS",
+      "details": {
+        "testedViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "geometry": {
+          "viewport": 390,
+          "scrollWidth": 390
+        },
+        "pickerAccessible": true,
+        "note": "Upload layout only, not populated grid responsiveness"
+      }
+    },
+    {
+      "id": "UI14",
+      "name": "Real Raw upload succeeds after errors and no JavaScript exception occurs",
+      "status": "PASS",
+      "details": {
+        "httpStatus": 200,
+        "success": true,
+        "javascriptExceptions": [],
+        "documentRequests": 1
+      }
+    },
+    {
+      "id": "UI15",
+      "name": "Bootstrap requirement is satisfied on the import page",
+      "status": "FAIL",
+      "details": "Bootstrap exists in the project but Index.cshtml has Layout=null and only loads Handsontable CSS plus custom import.css; the import page does not load Bootstrap."
+    },
+    {
+      "id": "UI16",
+      "name": "Dropping the real Raw workbook sends exactly one AJAX request",
+      "status": "PASS",
+      "details": {
+        "httpStatus": 200,
+        "addedRequests": 1,
+        "browserDefaultPrevented": true,
+        "observedFileSha256": "0A87CC43B43834EDA6B469609747D4A1186781DB2BFBC2419819B68A7B4CF9C7",
+        "documentRequests": 1
+      }
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "01_UI_CHON_FILE.png",
+      "caption": "Unmodified existing UI, before selecting a file; no data grid is displayed.",
+      "capturedAt": "2026-09-16T15:05:31.829Z"
+    },
+    {
+      "file": "02_UI_DANG_GUI_FILE.png",
+      "caption": "Real raw workbook selected; the actual outgoing request is temporarily held by the test tool to observe busy controls. This is not measured model inference time.",
+      "capturedAt": "2026-09-16T15:05:32.165Z"
+    },
+    {
+      "file": "03_UI_NHAN_KET_QUA.png",
+      "caption": "Actual post-upload status and file identity only, cropped directly during browser screenshot. The Handsontable grid below is intentionally outside the screenshot and outside the assessment.",
+      "capturedAt": "2026-09-16T15:05:32.926Z"
+    },
+    {
+      "file": "04_UI_BAO_LOI_FILE.png",
+      "caption": "Actual UI error for a deliberately invalid workbook, returned through the real IIS Express/C#/FastAPI route; not an injected response.",
+      "capturedAt": "2026-09-16T15:05:33.559Z"
+    }
+  ],
+  "network": [
+    {
+      "sequence": 1,
+      "method": "POST",
+      "url": "http://localhost:5077/api/import/parse",
+      "contentType": "multipart/form-data; boundary=----WebKitFormBoundaryr7CbPQe9ADA8C7RC",
+      "observedTextPostDataBytes": 548,
+      "note": "Chromium/Playwright postData does not expose file payload bytes here; file integrity is observed separately from the unmodified FormData File."
+    },
+    {
+      "sequence": 2,
+      "method": "POST",
+      "url": "http://localhost:5077/api/import/parse",
+      "contentType": "multipart/form-data; boundary=----WebKitFormBoundaryNZOUmE9qlp3tbwIy",
+      "observedTextPostDataBytes": 0,
+      "note": "Chromium/Playwright postData does not expose file payload bytes here; file integrity is observed separately from the unmodified FormData File."
+    },
+    {
+      "sequence": 3,
+      "method": "POST",
+      "url": "http://localhost:5077/api/import/parse",
+      "contentType": "multipart/form-data; boundary=----WebKitFormBoundary5s1IKA36FFvKuURL",
+      "observedTextPostDataBytes": 0,
+      "note": "Chromium/Playwright postData does not expose file payload bytes here; file integrity is observed separately from the unmodified FormData File."
+    },
+    {
+      "sequence": 4,
+      "method": "POST",
+      "url": "http://localhost:5077/api/import/parse",
+      "contentType": "multipart/form-data; boundary=----WebKitFormBoundaryaTAq0L35nBTBuqDb",
+      "observedTextPostDataBytes": 548,
+      "note": "Chromium/Playwright postData does not expose file payload bytes here; file integrity is observed separately from the unmodified FormData File."
+    },
+    {
+      "sequence": 5,
+      "method": "POST",
+      "url": "http://localhost:5077/api/import/parse",
+      "contentType": "multipart/form-data; boundary=----WebKitFormBoundaryvNzfL96wdpKBRARP",
+      "observedTextPostDataBytes": 548,
+      "note": "Chromium/Playwright postData does not expose file payload bytes here; file integrity is observed separately from the unmodified FormData File."
+    },
+    {
+      "sequence": 6,
+      "method": "POST",
+      "url": "http://localhost:5077/api/import/parse",
+      "contentType": "multipart/form-data; boundary=----WebKitFormBoundaryasA9M1iSwhcrqHKJ",
+      "observedTextPostDataBytes": 0,
+      "note": "Chromium/Playwright postData does not expose file payload bytes here; file integrity is observed separately from the unmodified FormData File."
+    },
+    {
+      "sequence": 7,
+      "method": "POST",
+      "url": "http://localhost:5077/api/import/parse",
+      "contentType": "multipart/form-data; boundary=----WebKitFormBoundaryW4M7ygummHr06IJV",
+      "observedTextPostDataBytes": 0,
+      "note": "Chromium/Playwright postData does not expose file payload bytes here; file integrity is observed separately from the unmodified FormData File."
+    }
+  ],
+  "injectedCases": [
+    "UI11 HTTP 503",
+    "UI12 invalid JSON",
+    "UI07 pre-send request hold for busy-state observation"
+  ],
+  "actualResponse": {
+    "httpStatus": 200,
+    "responseBodySha256": "E6095DB3A08716401C3EA7ECD3F236541D00AC3C92D22011AD85C93237EBE375",
+    "success": true,
+    "message": "AI đã tách dữ liệu. Hãy kiểm tra bản xem trước trước khi nhập.",
+    "schemaVersion": "2.0",
+    "sourceFile": "Sở Giáo dục và đào tạo_21a_TP_HTPLDN_Kết quả triển khai công tác hỗ trợ phá(...).xlsx",
+    "requiresReview": true,
+    "summary": {
+      "sheetCount": 1,
+      "tableCount": 1,
+      "rowCount": 7,
+      "valueRowCount": 1,
+      "cellCount": 91,
+      "ambiguousRowCount": 1,
+      "lowConfidenceTableCount": 0,
+      "uploadBytes": 60161
+    },
+    "tableRanges": [
+      {
+        "sheetName": "21a",
+        "sourceRange": "A2:M8"
+      }
+    ]
+  },
+  "observedFormDataFile": {
+    "fileName": "Sở Giáo dục và đào tạo_21a_TP_HTPLDN_Kết quả triển khai công tác hỗ trợ phá(...).xlsx",
+    "bytes": 60161,
+    "originalFileName": "Sở Giáo dục và đào tạo_21a_TP_HTPLDN_Kết quả triển khai công tác hỗ trợ phá(...).xlsx",
+    "sha256": "0A87CC43B43834EDA6B469609747D4A1186781DB2BFBC2419819B68A7B4CF9C7"
+  },
+  "loadedResources": {
+    "styles": [
+      "/Content/handsontable.full.min.css",
+      "/Content/import.css"
+    ],
+    "scripts": [
+      "/Scripts/handsontable.full.min.js",
+      "/Scripts/import-preview.js"
+    ]
+  },
+  "finishedAt": "2026-09-16T15:05:35.079Z",
+  "summary": {
+    "pass": 15,
+    "fail": 1
+  },
+  "productionSourcesUnchanged": true,
+  "notes": [
+    "No UI source, backend code, dataset or model file was modified.",
+    "No confirm/import-to-database button was clicked and no persistence was evaluated.",
+    "Grid renders incidentally because it is already part of the production page, but no grid screenshot or hierarchy/metric assessment is included.",
+    "The pending-request screenshot uses a test-only hold, not artificial UI state and not a model-speed claim.",
+    "A test-only fetch observer hashes the FormData File and passes the original FormData unmodified to native fetch; response uploadBytes is also checked. Chromium text postData is not treated as the complete multipart payload.",
+    "The report stores transport metadata and actual response summary only, not a second copy of the dataset."
+  ]
+}
