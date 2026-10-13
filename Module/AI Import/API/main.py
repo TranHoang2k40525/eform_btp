@@ -106,6 +106,7 @@ class TableResponse(ContractModel):
     formulaCells: list[dict[str, Any]]
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     postprocessing: str | None = None
+    trimmedHeaderRows: int = Field(default=0, ge=0)
     trimmedFooterRows: int = Field(ge=0)
 
 

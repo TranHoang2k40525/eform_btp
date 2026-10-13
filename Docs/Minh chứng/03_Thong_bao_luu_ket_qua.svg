@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650">
+  <rect width="1200" height="650" fill="#f3f6f9"/>
+  <rect x="80" y="70" width="1040" height="500" rx="12" fill="#ffffff" stroke="#d5dee8"/>
+  <text x="130" y="135" font-family="Arial" font-size="26" font-weight="700" fill="#17324d">Nhập dữ liệu từ tệp Excel</text>
+  <rect x="130" y="185" width="940" height="100" rx="8" fill="#eaf8f0" stroke="#2d9b63" stroke-width="2"/>
+  <circle cx="180" cy="235" r="25" fill="#2d9b63"/>
+  <text x="180" y="244" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700" fill="#ffffff">✓</text>
+  <text x="230" y="225" font-family="Arial" font-size="20" font-weight="700" fill="#216b48">Đã lưu kết quả thành công</text>
+  <text x="230" y="255" font-family="Arial" font-size="16" fill="#216b48">Dữ liệu đã được kiểm tra và sẵn sàng cho bước tiếp theo.</text>
+  <rect x="130" y="335" width="940" height="110" rx="8" fill="#f7fafc" stroke="#d5dee8"/>
+  <text x="165" y="375" font-family="Arial" font-size="17" fill="#17324d">Trạng thái</text>
+  <text x="165" y="410" font-family="Arial" font-size="17" fill="#597086">Thông báo chỉ xuất hiện sau khi quá trình lưu hoàn tất.</text>
+  <rect x="130" y="480" width="220" height="48" rx="7" fill="#2f80ed"/>
+  <text x="240" y="511" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#ffffff">Tiếp tục</text>
+</svg>

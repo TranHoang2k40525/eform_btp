@@ -1,0 +1,120 @@
+{
+  "timestamp": "2026-10-07T03:17:06.658Z",
+  "host": "http://localhost:5077/",
+  "tests": [
+    {
+      "id": "T8.01",
+      "name": "Kiểm tra Bootstrap CSS đã nạp trên trang (sửa lỗi UI15 tuần 7)",
+      "status": "PASS",
+      "details": {
+        "hasBootstrap": true
+      }
+    },
+    {
+      "id": "T8.02",
+      "name": "Kiểm tra trạng thái sẵn sàng của AI Service",
+      "status": "PASS",
+      "details": {
+        "serviceStatusText": "sẵn sàng"
+      }
+    },
+    {
+      "id": "T8.03",
+      "name": "Vẽ lưới Handsontable đa cấp từ kết quả AI",
+      "status": "PASS",
+      "details": {
+        "rows": 7,
+        "headers": 78,
+        "stickyHeaders": 0,
+        "sheetTabs": [],
+        "rangeInfo": "Vùng A2:M8 | 6 dòng tiêu đề | Cấu trúc đa cấp",
+        "confidence": "84,2% tin cậy"
+      }
+    },
+    {
+      "id": "T8.04",
+      "name": "Dựng các dòng tiêu đề đa cấp và ô gộp chuẩn xác cấu trúc Excel gốc",
+      "status": "PASS",
+      "details": {
+        "headerCells": 78
+      }
+    },
+    {
+      "id": "T8.05",
+      "name": "Hiển thị số liệu và nhãn AI map lên giao diện web",
+      "status": "PASS",
+      "details": {
+        "range": "Vùng A2:M8 | 6 dòng tiêu đề | Cấu trúc đa cấp",
+        "confidence": "84,2% tin cậy"
+      }
+    },
+    {
+      "id": "T9.01",
+      "name": "Bắt sự kiện người dùng sửa lỗi trực tiếp trên lưới Handsontable (afterChange)",
+      "status": "PASS",
+      "details": {
+        "editedCells": 1,
+        "countText": "1",
+        "saveBtnVisible": true,
+        "correctionsCount": 1
+      }
+    },
+    {
+      "id": "T9.02",
+      "name": "Lưu bản sửa đổi vào Cache client (localStorage) và server (/api/import/feedback)",
+      "status": "PASS",
+      "details": {
+        "cacheText": "Cache: 1 quy tắc",
+        "statusText": "Đã lưu 1 bản sửa lỗi vào Cache tự học của server.",
+        "hasLocalStorage": true
+      }
+    },
+    {
+      "id": "T9.03",
+      "name": "Hệ thống tự học từ Cache, tự động áp dụng bản sửa, giảm tải gọi AI",
+      "status": "PASS",
+      "details": {
+        "bannerVisible": true,
+        "bannerDesc": "Đã tự động áp dụng 1 bản sửa từ Cache tự học, giảm số lần gọi AI!",
+        "cacheRules": "1"
+      }
+    },
+    {
+      "id": "T10.01",
+      "name": "Bắt lỗi file Excel rác dung lượng 0 byte",
+      "status": "PASS",
+      "details": {
+        "statusText": "File Excel rỗng (0 bytes). Vui lòng chọn file hợp lệ.",
+        "emptyTitle": "Thông báo lỗi"
+      }
+    },
+    {
+      "id": "T10.02",
+      "name": "Bắt lỗi file Excel hỏng cấu trúc OpenXML",
+      "status": "PASS",
+      "details": {
+        "statusText": "Tệp tin không phải định dạng Excel OpenXML hợp lệ hoặc đã bị lỗi."
+      }
+    },
+    {
+      "id": "T10.03",
+      "name": "Lưu báo cáo thành công vào cơ sở dữ liệu qua POST /api/import/save",
+      "status": "PASS",
+      "details": {
+        "recordId": "#9279",
+        "msg": "Đã lưu thành công dữ liệu báo cáo vào hệ thống eForm.",
+        "fileName": "Sở Giáo dục và đào tạo_21a_TP_HTPLDN_Kết quả triển khai công tác hỗ trợ phá(...).xlsx",
+        "timestamp": "2026-10-07 10:17:25"
+      }
+    },
+    {
+      "id": "T10.04",
+      "name": "Hoàn tất toàn bộ chu trình, module AI chạy ổn định, không xung đột hệ thống cũ",
+      "status": "PASS",
+      "details": {
+        "statusText": "Lưu báo cáo thành công! Bản ghi: #9279",
+        "isStable": true
+      }
+    }
+  ]
+}

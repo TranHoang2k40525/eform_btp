@@ -23,6 +23,8 @@ namespace ImportDocument.Application.Dto
         public object Warnings { get; set; }
         public int TableCount { get; set; }
         public double DurationMs { get; set; }
+        public bool Saved { get; set; }
+        public int SavedRecordId { get; set; }
+        public string SaveMessage { get; set; }
     }
 }
-

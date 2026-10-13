@@ -1,0 +1,44 @@
+<mxfile host="app.diagrams.net" modified="2026-10-11T22:40:00.000Z" agent="desktop" version="24.7.17">
+  <diagram id="import-flow" name="Luồng nhập Excel">
+    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="QUY TRÌNH NHẬP VÀ XEM TRƯỚC DỮ LIỆU EXCEL" style="text;html=1;strokeColor=none;fillColor=none;fontSize=24;fontStyle=1;fontColor=#17324D;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="370" y="30" width="860" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="input" value="1. Chọn tệp Excel&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Chọn hoặc kéo thả tệp&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4FF;strokeColor=#2F80ED;strokeWidth=2;fontSize=17;fontColor=#17324D;" vertex="1" parent="1">
+          <mxGeometry x="80" y="180" width="230" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="validate" value="2. Kiểm tra đầu vào&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Định dạng, dung lượng, tệp rỗng&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7E6;strokeColor=#F2A900;strokeWidth=2;fontSize=17;fontColor=#17324D;" vertex="1" parent="1">
+          <mxGeometry x="390" y="180" width="250" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="analyze" value="3. Xác định vùng bảng&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Nhận diện tiêu đề, dữ liệu và ô gộp&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1ECFF;strokeColor=#7656C5;strokeWidth=2;fontSize=17;fontColor=#17324D;" vertex="1" parent="1">
+          <mxGeometry x="720" y="180" width="260" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="read" value="4. Đọc nội dung bảng&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Giữ nguyên giá trị từ tệp nguồn&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF8F0;strokeColor=#2D9B63;strokeWidth=2;fontSize=17;fontColor=#17324D;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="180" width="250" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="preview" value="5. Xem trước&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Bảng nhiều tầng, cuộn hai chiều, chỉ đọc&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF8F0;strokeColor=#2D9B63;strokeWidth=2;fontSize=17;fontColor=#17324D;" vertex="1" parent="1">
+          <mxGeometry x="390" y="430" width="250" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="save" value="6. Lưu kết quả hợp lệ&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Chỉ xác nhận sau khi lưu thành công&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF8F0;strokeColor=#2D9B63;strokeWidth=2;fontSize=17;fontColor=#17324D;" vertex="1" parent="1">
+          <mxGeometry x="720" y="430" width="260" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="next" value="7. Chuyển sang bước nghiệp vụ&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Đối chiếu và nhập dữ liệu chính thức&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4FF;strokeColor=#2F80ED;strokeWidth=2;fontSize=17;fontColor=#17324D;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="430" width="250" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="error" value="Tệp không hợp lệ&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Thông báo lỗi và yêu cầu chọn lại&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF0F0;strokeColor=#D64545;strokeWidth=2;fontSize=16;fontColor=#7A1F1F;" vertex="1" parent="1">
+          <mxGeometry x="390" y="650" width="250" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#53708A;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="input" target="validate"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#53708A;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="validate" target="analyze"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#53708A;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="analyze" target="read"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#53708A;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="read" target="preview"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#53708A;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="preview" target="save"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#53708A;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="save" target="next"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" value="Không đạt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#D64545;strokeWidth=2;dashed=1;endArrow=block;fontColor=#7A1F1F;" edge="1" parent="1" source="validate" target="error"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

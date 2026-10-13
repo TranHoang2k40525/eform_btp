@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="820" viewBox="0 0 1500 820">
+  <rect width="1500" height="820" fill="#f7fafc"/>
+  <text x="750" y="55" text-anchor="middle" font-family="Arial" font-size="28" font-weight="700" fill="#17324d">QUY TRÌNH NHẬP VÀ XEM TRƯỚC DỮ LIỆU EXCEL</text>
+  <g font-family="Arial" font-size="18" text-anchor="middle">
+    <g stroke-width="3">
+      <rect x="50" y="180" width="240" height="105" rx="14" fill="#eaf4ff" stroke="#2f80ed"/>
+      <rect x="340" y="180" width="260" height="105" rx="14" fill="#fff7e6" stroke="#f2a900"/>
+      <rect x="650" y="180" width="270" height="105" rx="14" fill="#f1ecff" stroke="#7656c5"/>
+      <rect x="970" y="180" width="270" height="105" rx="14" fill="#eaf8f0" stroke="#2d9b63"/>
+      <rect x="340" y="450" width="260" height="105" rx="14" fill="#eaf8f0" stroke="#2d9b63"/>
+      <rect x="650" y="450" width="270" height="105" rx="14" fill="#eaf8f0" stroke="#2d9b63"/>
+      <rect x="970" y="450" width="270" height="105" rx="14" fill="#eaf4ff" stroke="#2f80ed"/>
+      <rect x="340" y="670" width="260" height="85" rx="14" fill="#fff0f0" stroke="#d64545"/>
+    </g>
+    <g fill="#17324d">
+      <text x="170" y="220"><tspan x="170">1. Chọn tệp Excel</tspan><tspan x="170" dy="28" font-size="14">Chọn hoặc kéo thả tệp</tspan></text>
+      <text x="470" y="220"><tspan x="470">2. Kiểm tra đầu vào</tspan><tspan x="470" dy="28" font-size="14">Định dạng, dung lượng, tệp rỗng</tspan></text>
+      <text x="785" y="220"><tspan x="785">3. Xác định vùng bảng</tspan><tspan x="785" dy="28" font-size="14">Tiêu đề, dữ liệu và ô gộp</tspan></text>
+      <text x="1105" y="220"><tspan x="1105">4. Đọc nội dung bảng</tspan><tspan x="1105" dy="28" font-size="14">Giữ nguyên giá trị nguồn</tspan></text>
+      <text x="470" y="490"><tspan x="470">5. Xem trước</tspan><tspan x="470" dy="28" font-size="14">Cuộn hai chiều, chỉ đọc</tspan></text>
+      <text x="785" y="490"><tspan x="785">6. Lưu kết quả hợp lệ</tspan><tspan x="785" dy="28" font-size="14">Chỉ xác nhận sau khi lưu</tspan></text>
+      <text x="1105" y="490"><tspan x="1105">7. Bước nghiệp vụ tiếp theo</tspan><tspan x="1105" dy="28" font-size="14">Đối chiếu và nhập chính thức</tspan></text>
+      <text x="470" y="705" fill="#7a1f1f"><tspan x="470">Tệp không hợp lệ</tspan><tspan x="470" dy="26" font-size="14">Thông báo và chọn lại</tspan></text>
+    </g>
+  </g>
+  <g stroke="#53708a" stroke-width="3" fill="none" marker-end="url(#arrow)">
+    <path d="M290 232 H340"/><path d="M600 232 H650"/><path d="M920 232 H970"/>
+    <path d="M1105 285 V385 H470 V450"/><path d="M600 502 H650"/><path d="M920 502 H970"/>
+    <path d="M470 285 V670" stroke="#d64545" stroke-dasharray="8 7"/>
+  </g>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#53708a"/></marker></defs>
+</svg>

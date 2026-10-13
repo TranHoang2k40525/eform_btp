@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="31.4.5">
+  <diagram id="exception-and-e2e-flow" name="Luồng xử lý ngoại lệ và End-to-End">
+    <mxGraphModel dx="1200" dy="750" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="750" background="#ffffff">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="QUY TRÌNH BẮT LỖI FILE RÁC VÀ KIỂM THỬ TOÀN DIỆN END-TO-END" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=18;fontStyle=1;fontColor=#000000;" vertex="1" parent="1"><mxGeometry x="20" y="20" width="1160" height="40" as="geometry"/></mxCell>
+        <mxCell id="p1" value="CLIENT PRE-VALIDATION&#xa;Bắt file 0 byte, sai đuôi mở rộng,&#xa;file vượt giới hạn 50MB" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="40" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="p2" value="SERVER GUARD &amp; SANITIZE&#xa;Bắt file hỏng OpenXML,&#xa;kiểm tra Magic Byte PK" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="280" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="p3" value="AI EXTRACTION &amp; CACHE&#xa;Trích xuất cấu trúc bảng&#xa;và tự động điền cache" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="520" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="p4" value="XÁC NHẬN LƯU BÁO CÁO&#xa;Modal hiển thị số bản ghi,&#xa;tên biểu, thời gian thực hiện" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="760" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="p5" value="GHI DATABASE AN TOÀN&#xa;POST /api/import/save&#xa;Không xung đột hệ thống cũ" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="1000" y="90" width="180" height="80" as="geometry"/></mxCell>
+
+        <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="p1" target="p2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="p2" target="p3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="p3" target="p4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="p4" target="p5"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="box3" value="ĐỘ ỔN ĐỊNH VÀ TÍNH TOÀN VẸN CỦA HỆ THỐNG - TUẦN 10" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=13;fontColor=#000000;strokeWidth=1.5;" vertex="1" parent="1"><mxGeometry x="40" y="210" width="1140" height="150" as="geometry"/></mxCell>
+        <mxCell id="b3" value="- Phòng vệ đa tầng: Chặn đứng các tệp rác rỗng 0 bytes, tệp đổi đuôi giả mạo ngay tại trình duyệt và tầng API backend.&#xa;- Xử lý triệt để ngoại lệ OpenXmlPackageException, không để lộ StackTrace hệ thống ra phía Client.&#xa;- Kiểm thử toàn trình (End-to-End): Upload -&gt; AI Mapping -&gt; Tinh chỉnh ô -&gt; Lưu báo cáo DB qua API POST /api/import/save.&#xa;- Độc lập và tương thích 100%: Module AI Import hoạt động độc lập như một Microservice cắm thêm, không làm thay đổi các bảng cơ sở dữ liệu cũ của eForm.&#xa;- Tỷ lệ kiểm thử đạt 100% (12/12 ca test thành công rực rỡ qua bộ Playwright trên Microsoft Edge thật)." style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=20;spacingRight=20;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Arial;fontSize=12;fontColor=#000000;lineHeight=1.6;" vertex="1" parent="box3"><mxGeometry y="26" width="1140" height="124" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

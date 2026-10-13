@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="31.4.5">
+  <diagram id="handsontable-flow" name="Luồng dựng lưới Handsontable đa cấp">
+    <mxGraphModel dx="1200" dy="750" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="750" background="#ffffff">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="QUY TRÌNH DỰNG LƯỚI PREVIEW ĐA CẤP HANDSONTABLE" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=18;fontStyle=1;fontColor=#000000;" vertex="1" parent="1"><mxGeometry x="20" y="20" width="1160" height="40" as="geometry"/></mxCell>
+        <mxCell id="step1" value="TIẾP NHẬN DỮ LIỆU TỪ AI&#xa;Ma trận ô, danh sách merged_cells,&#xa;phân cấp hierarchy và confidence" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="40" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="step2" value="TÁCH HEADER VÀ DỮ LIỆU&#xa;Nhận diện 6 tầng tiêu đề&#xa;và 1 tầng dữ liệu nghiệp vụ" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="280" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="step3" value="TÁI TẠO MERGED CELLS&#xa;Gộp ô đa tầng ngang/dọc&#xa;theo cấu trúc bảng Excel gốc" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="520" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="step4" value="KHỞI TẠO HANDSONTABLE&#xa;Cố định sticky headers,&#xa;custom borders và renderers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="760" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="step5" value="HIỂN THỊ SỐ LIỆU ĐA CẤP&#xa;Gắn nhãn AI mapping,&#xa;Breadcrumb cột và nhãn phân cấp" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="1000" y="90" width="180" height="80" as="geometry"/></mxCell>
+        
+        <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="step1" target="step2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="step2" target="step3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="step3" target="step4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="step4" target="step5"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="box1" value="KẾT QUẢ ĐẠT ĐƯỢC - TUẦN 8" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=13;fontColor=#000000;strokeWidth=1.5;" vertex="1" parent="1"><mxGeometry x="40" y="210" width="1140" height="150" as="geometry"/></mxCell>
+        <mxCell id="b1" value="- Lưới xem trước hiển thị trung thực 100% cấu trúc bảng tính Excel gốc (Mẫu 21a: 6 tầng header, 13 cột A-M).&#xa;- Xử lý 78 ô tiêu đề gộp phức tạp, sticky header cố định khi cuộn trang, căn chỉnh chuẩn kiểu dữ liệu (số sang phải, chữ sang trái).&#xa;- Tích hợp thanh Breadcrumb cột và nhãn phân cấp dòng (Tổng số, Chi tiết) giúp cán bộ thẩm định dễ dàng đối chiếu số liệu.&#xa;- Giao diện tích hợp đầy đủ Bootstrap 3.4.1 khắc phục hoàn toàn tồn tại UI15 từ Tuần 7." style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=20;spacingRight=20;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Arial;fontSize=12;fontColor=#000000;lineHeight=1.6;" vertex="1" parent="box1"><mxGeometry y="26" width="1140" height="124" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -40,6 +40,10 @@ NUMBER_IN_TEXT_RE = re.compile(r"\d+(?:[.,]\d+)*")
 FOOTER_TEXT_RE = re.compile(
     r"\b(ghi chu|nguoi lap bieu|nguoi kiem tra|ky,|dong dau|thu truong|giam doc)\b"
 )
+METADATA_TEXT_RE = re.compile(
+    r"\b(bieu so|ban hanh theo|ngay nhan bao cao|co so bo nam|don vi bao cao|"
+    r"don vi nhan bao cao|ky bao cao|tu ngay|den ngay)\b"
+)
 TOTAL_ROW_RE = re.compile(r"^(tong so|tong cong|cong chung)(?:\b|$)")
 ROMAN_ROW_RE = re.compile(r"^[ivxlcdm]+$", re.IGNORECASE)
 INTEGER_ROW_RE = re.compile(r"^\d+$")
@@ -480,17 +484,28 @@ def prediction_to_tables(
 
 
 def refine_table_bounds(worksheet: Any, table: dict[str, Any]) -> dict[str, Any]:
-    """Trim obvious note/signature footers accidentally connected to a predicted table."""
+    """Refine model bounds around a real table while preserving its merged layout."""
     refined = dict(table)
     left, right = int(refined["left"]), int(refined["right"])
-    header_bottom = int(refined["header_bottom"])
     width = max(1, right - left + 1)
+    top = int(refined["top"])
     bottom = int(refined["bottom"])
-    trimmed = 0
+    original_top = top
+    original_bottom = bottom
 
-    while bottom > header_bottom:
-        cells = [worksheet.cell(bottom, column) for column in range(left, right + 1)]
-        values = [_cell_value(worksheet, bottom, column) for column in range(left, right + 1)]
+    def row_values(row: int) -> list[Any]:
+        return [_cell_value(worksheet, row, column) for column in range(left, right + 1)]
+
+    def row_has_merge(row: int) -> bool:
+        for merged_range in worksheet.merged_cells.ranges:
+            merge_left, merge_top, merge_right, merge_bottom = range_boundaries(str(merged_range))
+            if merge_top <= row <= merge_bottom and merge_left <= right and merge_right >= left:
+                return True
+        return False
+
+    def row_profile(row: int) -> tuple[list[Any], int, int, int, bool, bool]:
+        values = row_values(row)
+        cells = [worksheet.cell(row, column) for column in range(left, right + 1)]
         nonempty = sum(bool(clean_text(value)) for value in values)
         numeric = sum(
             isinstance(value, (int, float)) and not isinstance(value, bool)
@@ -501,6 +516,52 @@ def refine_table_bounds(worksheet: Any, table: dict[str, Any]) -> dict[str, Any]
             for cell in cells
         )
         text = fold_text(" ".join(clean_text(value) for value in values if value is not None))
+        return values, nonempty, numeric, bordered, bool(METADATA_TEXT_RE.search(text)), row_has_merge(row)
+
+    # Model components can connect a form title to the table through merged cells.
+    # Remove only leading rows that look like metadata and are followed by a
+    # bordered/header or numeric row. This is structural, not workbook-specific.
+    while top < bottom:
+        _, nonempty, numeric, bordered, metadata_text, merged = row_profile(top)
+        sparse = nonempty <= max(1, math.ceil(width * 0.35))
+        weak_grid = bordered < math.ceil(width * 0.35)
+        future_rows = range(top + 1, min(bottom, top + 7) + 1)
+        has_future_table = any(
+            row_profile(future_row)[2] > 0
+            or row_profile(future_row)[3] >= math.ceil(width * 0.50)
+            or row_profile(future_row)[1] >= max(2, math.ceil(width * 0.50))
+            for future_row in future_rows
+        )
+        if numeric == 0 and weak_grid and has_future_table and (metadata_text or merged or sparse):
+            top += 1
+            continue
+        break
+
+    # Blank separator rows immediately before the real header are not part of
+    # the table, even when they were connected by a merged title region.
+    while top < bottom:
+        _, nonempty, numeric, bordered, _, _ = row_profile(top)
+        if nonempty == 0 and numeric == 0 and bordered == 0:
+            top += 1
+            continue
+        break
+
+    header_bottom = max(top, min(bottom, int(refined["header_bottom"])))
+    first_value_row = None
+    for row in range(top + 1, bottom + 1):
+        values, nonempty, numeric, bordered, _, _ = row_profile(row)
+        if numeric > 0 and nonempty >= max(1, math.ceil(width * 0.20)):
+            first_value_row = row
+            break
+    if first_value_row is not None:
+        header_bottom = max(top, first_value_row - 1)
+
+    trimmed = 0
+
+    while bottom > header_bottom:
+        _, nonempty, numeric, bordered, _, _ = row_profile(bottom)
+        values = row_values(bottom)
+        text = fold_text(" ".join(clean_text(value) for value in values if value is not None))
         sparse = nonempty <= max(1, math.ceil(width * 0.30))
         weak_grid = bordered < math.ceil(width * 0.35)
         footer_text = bool(FOOTER_TEXT_RE.search(text))
@@ -510,11 +571,13 @@ def refine_table_bounds(worksheet: Any, table: dict[str, Any]) -> dict[str, Any]
             continue
         break
 
-    if bottom > header_bottom:
-        refined["bottom"] = bottom
-        if trimmed:
-            refined["postprocessing"] = "footer-trim-v1"
-            refined["trimmed_footer_rows"] = trimmed
+    refined["top"] = top
+    refined["bottom"] = bottom
+    refined["header_bottom"] = header_bottom
+    if top != original_top or bottom != original_bottom or header_bottom != int(table["header_bottom"]):
+        refined["postprocessing"] = "structural-boundary-refine-v2"
+    refined["trimmed_header_rows"] = max(0, top - original_top)
+    refined["trimmed_footer_rows"] = trimmed
     return refined
 
 
@@ -944,6 +1007,7 @@ def extract_table_payload_with_values(
         "formulaCells": formula_cells,
         "confidence": table.get("confidence"),
         "postprocessing": table.get("postprocessing"),
+        "trimmedHeaderRows": int(table.get("trimmed_header_rows", 0)),
         "trimmedFooterRows": int(table.get("trimmed_footer_rows", 0)),
     }
 

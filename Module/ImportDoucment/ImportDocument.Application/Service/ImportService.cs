@@ -9,6 +9,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ImportDocument.Application.Dto;
+using ImportDocument.Domain.Entities;
+using ImportDocument.Domain.Interfaces;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -17,30 +19,35 @@ namespace ImportDocument.Application.Services
     public class ImportService : IImportService
     {
         private static readonly HttpClient Http = CreateHttpClient();
+        private readonly IImportRepository repository;
+        public ImportService()
+        {
+        }
 
-        public async Task<object> GetHealthAsync(CancellationToken cancellationToken)
+        public ImportService(IImportRepository repository)
+        {
+            this.repository = repository;
+        }
+
+        public async Task<object> GetHealthAsync()
         {
             var extractUrl = ConfigurationManager.AppSettings["AiUrl"]
                 ?? "http://127.0.0.1:8010/api/eform/extract";
             var healthUri = new UriBuilder(extractUrl) { Path = "/health", Query = string.Empty }.Uri;
-            using (var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+            try
             {
-                linked.CancelAfter(TimeSpan.FromSeconds(5));
-                try
+                using (var response = await Http.GetAsync(healthUri))
                 {
-                    using (var response = await Http.GetAsync(healthUri, linked.Token))
-                    {
-                        var content = await response.Content.ReadAsStringAsync();
-                        if (!response.IsSuccessStatusCode)
-                            return new JObject { ["status"] = "unavailable" };
-                        return JObject.Parse(content);
-                    }
+                    var content = await response.Content.ReadAsStringAsync();
+                    if (!response.IsSuccessStatusCode)
+                        return new JObject { ["status"] = "unavailable" };
+                    return JObject.Parse(content);
                 }
-                catch (Exception ex) when (
-                    ex is HttpRequestException || ex is TaskCanceledException || ex is JsonException)
-                {
-                    return new JObject { ["status"] = "unavailable" };
-                }
+            }
+            catch (Exception ex) when (
+                ex is HttpRequestException || ex is TaskCanceledException || ex is JsonException)
+            {
+                return new JObject { ["status"] = "unavailable" };
             }
         }
 
@@ -48,31 +55,41 @@ namespace ImportDocument.Application.Services
             Stream file,
             string fileName,
             string userId,
-            string documentId,
-            CancellationToken cancellationToken)
+            string documentId)
         {
-            cancellationToken.ThrowIfCancellationRequested();
             if (file == null || (file.CanSeek && file.Length == 0))
-                return Failed("File Excel rỗng.", fileName, userId, documentId);
+                return Failed("File Excel rỗng (0 bytes). Vui lòng chọn file có dữ liệu.", fileName, userId, documentId);
+
+            if (file.CanSeek && file.Length > 52428800)
+                return Failed("File Excel vượt giới hạn dung lượng 50 MB.", fileName, userId, documentId);
 
             var safeFileName = Path.GetFileName(fileName ?? string.Empty);
             var extension = Path.GetExtension(safeFileName).ToLowerInvariant();
             if (extension != ".xlsx" && extension != ".xlsm")
                 return Failed("Chỉ chấp nhận file .xlsx hoặc .xlsm.", safeFileName, userId, documentId);
 
+            if (file.CanSeek && file.Length >= 4)
+            {
+                byte[] header = new byte[4];
+                file.Position = 0;
+                int read = file.Read(header, 0, 4);
+                file.Position = 0;
+                if (read == 4 && (header[0] != 0x50 || header[1] != 0x4B))
+                {
+                    return Failed("Tệp tin không phải định dạng Excel OpenXML hợp lệ hoặc đã bị lỗi.", safeFileName, userId, documentId);
+                }
+            }
+
             var aiUrl = ConfigurationManager.AppSettings["AiUrl"]
                 ?? "http://127.0.0.1:8010/api/eform/extract";
-            var timeoutSeconds = ReadPositiveSetting("AiTimeoutSeconds", 180, 5, 600);
 
             if (file.CanSeek)
                 file.Position = 0;
 
             string responseJson;
-            using (var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             using (var multipart = new MultipartFormDataContent())
             using (var fileContent = new StreamContent(file))
             {
-                linked.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
                 multipart.Add(fileContent, "file", safeFileName);
@@ -80,7 +97,7 @@ namespace ImportDocument.Application.Services
 
                 try
                 {
-                    using (var response = await Http.PostAsync(aiUrl, multipart, linked.Token))
+                    using (var response = await Http.PostAsync(aiUrl, multipart))
                     {
                         responseJson = await response.Content.ReadAsStringAsync();
                         if (!response.IsSuccessStatusCode)
@@ -95,10 +112,7 @@ namespace ImportDocument.Application.Services
                 }
                 catch (TaskCanceledException ex)
                 {
-                    var message = cancellationToken.IsCancellationRequested
-                        ? "Yêu cầu đọc Excel đã bị hủy."
-                        : "AI service xử lý quá thời gian cho phép.";
-                    return Failed(message + " " + ex.Message, safeFileName, userId, documentId);
+                    return Failed("AI service xử lý quá thời gian cho phép: " + ex.Message, safeFileName, userId, documentId);
                 }
                 catch (HttpRequestException ex)
                 {
@@ -133,6 +147,16 @@ namespace ImportDocument.Application.Services
             string userId,
             string documentId)
         {
+            var schemaVersion = (string)aiResult["schemaVersion"];
+            if (!string.Equals(schemaVersion, "2.0", StringComparison.Ordinal))
+            {
+                return Failed(
+                    "AI trả về schema không được hỗ trợ: " + (schemaVersion ?? "(trống)") + ".",
+                    fileName,
+                    userId,
+                    documentId);
+            }
+
             var sheetArray = aiResult["sheets"] as JArray ?? new JArray();
             var sheetNames = sheetArray
                 .OfType<JObject>()
@@ -151,7 +175,8 @@ namespace ImportDocument.Application.Services
             var summary = aiResult["summary"] as JObject ?? new JObject();
             var warnings = aiResult["warnings"] as JArray ?? new JArray();
             var firstTable = tables.FirstOrDefault();
-            var success = tables.Count > 0;
+            var success = tables.Count > 0 &&
+                tables.All(table => table["data"] is JArray);
             var requiresReview = (bool?)aiResult["requiresReview"] ?? !success;
 
             return new ImportResponseDto
@@ -168,7 +193,7 @@ namespace ImportDocument.Application.Services
                 RowCount = (int?)summary["valueRowCount"] ?? 0,
                 ErrorCount = 0,
                 Errors = new JArray(),
-                SchemaVersion = (string)aiResult["schemaVersion"],
+                SchemaVersion = schemaVersion,
                 ModelVersion = (string)aiResult["model"],
                 Valid = success,
                 RequiresReview = requiresReview,
@@ -213,6 +238,76 @@ namespace ImportDocument.Application.Services
             var client = new HttpClient();
             client.Timeout = Timeout.InfiniteTimeSpan;
             return client;
+        }
+
+        public async Task<SaveReportResponseDto> SaveReportAsync(SaveReportRequestDto request)
+        {
+            if (request == null)
+            {
+                return new SaveReportResponseDto
+                {
+                    Success = false,
+                    Message = "Dữ liệu yêu cầu rỗng."
+                };
+            }
+
+            var docId = string.IsNullOrWhiteSpace(request.DocumentId) ? "EFORM_DOC_DEFAULT" : request.DocumentId;
+            var userId = string.IsNullOrWhiteSpace(request.UserId) ? "stp_tphn_bc" : request.UserId;
+            var fileName = string.IsNullOrWhiteSpace(request.FileName) ? "Workbook.xlsx" : request.FileName;
+
+            var jsonPayload = request.RawJson;
+            if (string.IsNullOrWhiteSpace(jsonPayload))
+            {
+                jsonPayload = JsonConvert.SerializeObject(new
+                {
+                    sheetName = request.SheetName,
+                    sourceRange = request.SourceRange,
+                    tableData = request.TableData,
+                    corrections = request.Corrections,
+                    aiModelVersion = request.AiModelVersion,
+                    savedAt = DateTime.Now
+                });
+            }
+
+            var record = new ImportRecord
+            {
+                DocumentId = docId,
+                UserId = userId,
+                FileName = fileName,
+                JsonData = jsonPayload,
+                CreatedAt = DateTime.Now
+            };
+
+            try
+            {
+                if (repository == null)
+                {
+                    return new SaveReportResponseDto
+                    {
+                        Success = false,
+                        Message = "Chưa cấu hình repository lưu dữ liệu import."
+                    };
+                }
+
+                await repository.SaveAsync(record);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceWarning("Database save warning: " + ex.Message);
+                return new SaveReportResponseDto
+                {
+                    Success = false,
+                    Message = "Không thể lưu dữ liệu import vào cơ sở dữ liệu: " + ex.Message
+                };
+            }
+
+            return new SaveReportResponseDto
+            {
+                Success = true,
+                RecordId = record.Id,
+                Message = "Đã lưu thành công dữ liệu báo cáo vào hệ thống eForm.",
+                CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+            };
         }
 
         private static ImportResponseDto Failed(

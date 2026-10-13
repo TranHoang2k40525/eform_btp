@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -19,7 +19,6 @@ namespace ImportDocumentAPI
 
         protected void Application_Start()
         {
-            AreaRegistration.RegisterAllAreas();
             GlobalConfiguration.Configure(WebApiConfig.Register);
             ImportDocumentAPI.App_Start.SwaggerConfig.Register(GlobalConfiguration.Configuration);
             ImportDocument.ImportApi.App_Start.NinjectConfig.Register(GlobalConfiguration.Configuration);
@@ -29,4 +28,3 @@ namespace ImportDocumentAPI
         }
     }
 }
-

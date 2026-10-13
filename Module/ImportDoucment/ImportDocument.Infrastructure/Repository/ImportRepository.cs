@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using ImportDocument.Domain.Entities;
 using ImportDocument.Domain.Interfaces;
@@ -8,10 +7,10 @@ namespace ImportDocument.Infrastructure.Repository
     {
         private readonly ImportDbContext context;
         public ImportRepository(ImportDbContext context) { this.context = context; }
-        public async Task SaveAsync(ImportRecord result, CancellationToken cancellationToken)
+        public async Task SaveAsync(ImportRecord result)
         {
             context.ImportRecords.Add(result);
-            await context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesAsync();
         }
     }
 }

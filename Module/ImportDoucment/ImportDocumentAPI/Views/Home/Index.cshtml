@@ -4,137 +4,75 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light" />
-    <title>Xem trước dữ liệu Excel | eForm</title>
+    <title>AI Import Excel | eForm BTP</title>
     <link rel="stylesheet" href="/Content/handsontable.full.min.css" />
     <link rel="stylesheet" href="/Content/import.css" />
 </head>
 <body>
-    <div class="app-shell">
-        <header class="topbar">
-            <div class="brand" aria-label="eForm AI Import">
-                <span class="brand-mark" aria-hidden="true">eF</span>
-                <span class="brand-copy">
-                    <strong>AI Import Excel</strong>
-                    <small>Xem trước dữ liệu trước khi nhập biểu</small>
-                </span>
+    <div class="import-app">
+        <header class="app-header">
+            <div>
+                <p class="eyebrow">eForm BTP · AI Import</p>
+                <h1>Nhập dữ liệu từ file Excel</h1>
+                <p class="subtitle">Tải workbook lên, hệ thống bóc tách cấu trúc bằng AI, lưu kết quả và dựng lại bảng xem trước.</p>
             </div>
-
-            <div class="topbar-actions">
-                <span id="serviceStatus" class="service-status" role="status">
-                    <span class="service-dot" aria-hidden="true"></span>
-                    <span>Đang kiểm tra model</span>
-                </span>
-                <button type="button" id="downloadTemplate" class="button button-secondary">
-                    Tải template
-                </button>
-                <button type="button" id="import" class="button button-secondary">
-                    Chọn file Excel
-                </button>
-                <button type="button" id="confirm" class="button button-primary" disabled>
-                    Nhập dữ liệu
-                </button>
+            <div id="serviceStatus" class="service-status" aria-live="polite">
+                <span class="status-dot"></span><span id="serviceStatusText">Đang kiểm tra AI...</span>
             </div>
         </header>
 
-        <div id="statusBar" class="status-bar" role="status" aria-live="polite">
-            <span id="statusText">Chọn một workbook để bắt đầu.</span>
-            <span id="statusMeta"></span>
-        </div>
-
-        <main class="workspace">
-            <section class="preview-panel" aria-labelledby="previewTitle">
-                <div class="preview-heading">
+        <main>
+            <section class="upload-card" aria-labelledby="uploadTitle">
+                <div class="section-heading">
                     <div>
-                        <h1 id="previewTitle">Bản xem trước dữ liệu</h1>
-                        <p id="fileName">Chưa có file được chọn</p>
+                        <span class="step">01</span>
+                        <h2 id="uploadTitle">Chọn file Excel</h2>
                     </div>
-                    <div class="preview-counts" aria-label="Thống kê workbook">
-                        <span><strong id="sheetCount">0</strong> sheet</span>
-                        <span><strong id="tableCount">0</strong> bảng</span>
-                        <span><strong id="valueRowCount">0</strong> dòng dữ liệu</span>
-                    </div>
+                    <span class="file-rule">.xlsx hoặc .xlsm · tối đa 50 MB</span>
                 </div>
-
-                <nav id="sheetTabs" class="sheet-tabs" aria-label="Danh sách sheet"></nav>
-                <nav id="tableTabs" class="table-tabs" aria-label="Danh sách vùng bảng"></nav>
-
-                <div id="gridHost" class="grid-host">
-                    <div id="hotContainer" class="hot-container" aria-label="Dữ liệu Excel đã tách"></div>
-
-                    <div id="emptyState" class="empty-state">
-                        <span class="file-badge" aria-hidden="true">XLSX</span>
-                        <h2>Đưa file Excel vào để xem dữ liệu</h2>
-                        <p>AI chỉ xác định vùng bảng. Giá trị, hàng tiêu đề và ô gộp được giữ nguyên để bạn kiểm tra.</p>
-                        <button type="button" id="emptyImport" class="button button-primary">Chọn file</button>
-                        <small>Hỗ trợ .xlsx và .xlsm, tối đa 50 MB</small>
-                    </div>
-
-                    <div id="loadingState" class="loading-state" hidden aria-label="Đang xử lý file">
-                        <div class="skeleton-toolbar"></div>
-                        <div class="skeleton-grid" aria-hidden="true">
-                            <span></span><span></span><span></span><span></span><span></span>
-                            <span></span><span></span><span></span><span></span><span></span>
-                            <span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                        <p>Model đang nhận diện cấu trúc bảng và lấy dữ liệu gốc.</p>
-                    </div>
-
-                    <div id="dropOverlay" class="drop-overlay" hidden>
-                        <strong>Thả file để đọc dữ liệu</strong>
-                    </div>
+                <div id="dropZone" class="drop-zone" tabindex="0">
+                    <div class="upload-icon" aria-hidden="true">↑</div>
+                    <strong>Kéo thả file Excel vào đây</strong>
+                    <span>hoặc</span>
+                    <button id="chooseFileButton" type="button" class="primary-button">Chọn file từ máy</button>
+                    <p id="selectedFile" class="selected-file">Chưa chọn file</p>
                 </div>
-
-                <footer class="grid-footer">
-                    <span id="rangeInfo">Chưa chọn vùng bảng</span>
-                    <span id="selectionInfo">Dùng thanh cuộn ngoài của trang</span>
-                </footer>
+                <div id="uploadError" class="message error-message" hidden role="alert"></div>
+                <div class="upload-actions">
+                    <button id="importButton" type="button" class="primary-button" disabled>Nhập và phân tích</button>
+                    <button id="clearButton" type="button" class="secondary-button" disabled>Xóa lựa chọn</button>
+                </div>
+                <div id="progress" class="progress-area" hidden aria-live="polite">
+                    <div class="progress-track"><span id="progressBar"></span></div>
+                    <span id="progressText">Đang gửi file tới AI...</span>
+                </div>
+                <input id="fileInput" type="file" accept=".xlsx,.xlsm" hidden />
             </section>
 
-            <details class="inspector">
-                <summary class="inspector-heading">
-                    <h2 id="inspectorTitle">Thông tin nhận diện</h2>
-                    <span class="inspector-summary-meta">
-                        <span id="confidenceBadge" class="confidence-badge is-neutral">Chưa có kết quả</span>
-                        <span class="inspector-chevron" aria-hidden="true"></span>
-                    </span>
-                </summary>
-
-                <div class="inspector-body">
-                    <dl class="metadata-list">
-                        <div><dt>Sheet</dt><dd id="metaSheet">Chưa chọn</dd></div>
-                        <div><dt>Vùng nguồn</dt><dd id="metaRange">Chưa chọn</dd></div>
-                        <div><dt>Dòng tiêu đề</dt><dd id="metaHeaders">0</dd></div>
-                        <div><dt>Kích thước</dt><dd id="metaSize">0 x 0</dd></div>
-                        <div><dt>Thời gian xử lý</dt><dd id="metaDuration">0 ms</dd></div>
-                    </dl>
-
-                    <section class="inspector-section" aria-labelledby="hierarchyTitle">
-                        <div class="section-heading">
-                            <h3 id="hierarchyTitle">Cấu trúc cột cha và cột con</h3>
-                            <span id="columnCount">0 cột</span>
-                        </div>
-                        <div id="hierarchyList" class="hierarchy-list">
-                            <p class="muted-copy">Đường dẫn tiêu đề sẽ xuất hiện sau khi model phát hiện bảng.</p>
-                        </div>
-                    </section>
-
-                    <section class="inspector-section" aria-labelledby="noticeTitle">
-                        <div class="section-heading">
-                            <h3 id="noticeTitle">Kiểm tra trước khi nhập</h3>
-                        </div>
-                        <div id="noticeList" class="notice-list">
-                            <p class="muted-copy">Chưa có cảnh báo.</p>
-                        </div>
-                    </section>
+            <section id="resultSection" class="result-card" hidden aria-labelledby="resultTitle">
+                <div class="section-heading result-heading">
+                    <div>
+                        <span class="step">02</span>
+                        <h2 id="resultTitle">Kết quả bóc tách</h2>
+                    </div>
+                    <span id="saveStatus" class="save-status"></span>
                 </div>
-            </details>
+                <div class="result-meta">
+                    <div><span>File</span><strong id="resultFileName">-</strong></div>
+                    <div><span>Sheet</span><strong id="resultSheetName">-</strong></div>
+                    <div><span>Vùng dữ liệu</span><strong id="resultRange">-</strong></div>
+                    <div><span>Số dòng dữ liệu</span><strong id="resultRowCount">0</strong></div>
+                    <div><span>Số cột</span><strong id="resultColumnCount">0</strong></div>
+                </div>
+                <div id="resultMessage" class="message" hidden></div>
+                <div class="table-help">Bảng chỉ đọc · cuộn dọc/ngang để xem toàn bộ kết quả từ Excel</div>
+                <div id="sheetTabs" class="sheet-tabs" hidden></div>
+                <div id="gridHost" class="grid-host">
+                    <div id="hotContainer" aria-label="Bảng kết quả Excel"></div>
+                </div>
+            </section>
         </main>
-
-        <div class="page-bottom-buffer" aria-hidden="true"></div>
-        <input id="file" class="visually-hidden" type="file" accept=".xlsx,.xlsm" />
     </div>
-
     <script src="/Scripts/handsontable.full.min.js"></script>
     <script src="/Scripts/import-preview.js"></script>
 </body>

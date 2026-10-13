@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="31.4.5">
+  <diagram id="cache-feedback-flow" name="Luồng Cache tự học giảm gọi AI">
+    <mxGraphModel dx="1200" dy="750" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="750" background="#ffffff">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="QUY TRÌNH BẮT SỰ KIỆN SỬA LỖI VÀ TỰ HỌC QUA CACHE" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Arial;fontSize=18;fontStyle=1;fontColor=#000000;" vertex="1" parent="1"><mxGeometry x="20" y="20" width="1160" height="40" as="geometry"/></mxCell>
+        <mxCell id="s1" value="NGƯỜI DÙNG SỬA Ô&#xa;Chỉnh sửa trực tiếp trên&#xa;Handsontable (row, col)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="40" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="s2" value="BẮT HOOK AFTERCHANGE&#xa;Ghi nhận: sheet, tọa độ ô,&#xa;giá trị cũ sang giá trị mới" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="280" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="s3" value="ĐÁNH DẤU GIAO DIỆN&#xa;Gán viền nhận diện thay đổi,&#xa;kích hoạt nút Lưu vào Cache" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="520" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="s4" value="LƯU CACHE 2 TẦNG&#xa;1. LocalStorage client (&lt;5ms)&#xa;2. Server POST /api/import/feedback" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="760" y="90" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="s5" value="VÒNG LẶP TỰ HỌC&#xa;Lần upload sau: Tự áp dụng,&#xa;giảm gọi AI, tăng độ chính xác" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=13;fontStyle=1;strokeWidth=1.5;spacing=8;" vertex="1" parent="1"><mxGeometry x="1000" y="90" width="180" height="80" as="geometry"/></mxCell>
+
+        <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="s1" target="s2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="s2" target="s3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="s3" target="s4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endSize=6;" edge="1" parent="1" source="s4" target="s5"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="box2" value="CƠ CHẾ TỰ HỌC VÀ TỐI ƯU HÓA TÀI NGUYÊN - TUẦN 9" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Arial;fontSize=13;fontColor=#000000;strokeWidth=1.5;" vertex="1" parent="1"><mxGeometry x="40" y="210" width="1140" height="150" as="geometry"/></mxCell>
+        <mxCell id="b2" value="- Khóa các hàng tiêu đề (readOnly), chỉ cho phép sửa dữ liệu tại các hàng số liệu nghiệp vụ.&#xa;- Bắt trực tiếp sự kiện hook afterChange của Handsontable, ghi lại mọi tinh chỉnh của cán bộ.&#xa;- Cơ chế Cache 2 tầng: Phản hồi siêu tốc tại trình duyệt (localStorage) kết hợp đồng bộ hóa tập trung lên backend ASP.NET.&#xa;- Tự động áp dụng các sửa đổi đối với các mẫu Excel định kỳ, hiển thị Banner thông báo 'Đã tự động áp dụng bản sửa từ Cache tự học'.&#xa;- Cắt giảm tối đa chi phí tài nguyên tính toán và loại bỏ hoàn toàn các lỗi lặp lại trong các kỳ báo cáo sau." style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=20;spacingRight=20;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Arial;fontSize=12;fontColor=#000000;lineHeight=1.6;" vertex="1" parent="box2"><mxGeometry y="26" width="1140" height="124" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
