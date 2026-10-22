@@ -3,8 +3,11 @@ import os
 import sys
 import io
 
-# Ensure utf-8 output encoding
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+try:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 
 import docx
 from docx import Document
@@ -576,6 +579,10 @@ def generate_summary_8_10():
 
 if __name__ == "__main__":
     print("=== BẮT ĐẦU TẠO CÁC BÁO CÁO THỰC TẬP DOCX CHUẨN KẾ HOẠCH HỌC TẬP (BIỂU 2) ===")
+    from generate_week_3 import generate_week_3
+    from generate_week_4 import generate_week_4
+    generate_week_3()
+    generate_week_4()
     generate_week_8()
     generate_week_9()
     generate_week_10()
