@@ -18,3 +18,7 @@
 **/Data
 **/*.zip
 .playwright-cli/
+~$*
+*.tmp
+chat_history*.txt
+session_*_chat.txt
