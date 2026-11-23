@@ -7,6 +7,10 @@ namespace ImportDocument.Application.Dto
     {
         public string DocumentId { get; set; }
         public string UserId { get; set; }
+        /// <summary>Tên đăng nhập eForm (lấy từ JWT, ghi kèm trong JsonData).</summary>
+        public string UserName { get; set; }
+        /// <summary>Nơi gọi lưu, vd "EFORM_NQ" (nút Nhập Excel AI). Ghi kèm trong JsonData.</summary>
+        public string Source { get; set; }
         public string FileName { get; set; }
         public string SheetName { get; set; }
         public string SourceRange { get; set; }

@@ -108,6 +108,9 @@ class TableResponse(ContractModel):
     postprocessing: str | None = None
     trimmedHeaderRows: int = Field(default=0, ge=0)
     trimmedFooterRows: int = Field(ge=0)
+    labelColumnIndex: int | None = None
+    columnIssues: list[str] = []
+    columnNotes: list[str] = []
 
 
 class SheetResponse(ContractModel):
@@ -126,6 +129,7 @@ class SummaryResponse(ContractModel):
     ambiguousRowCount: int = Field(ge=0)
     lowConfidenceTableCount: int = Field(ge=0)
     uploadBytes: int = Field(ge=0)
+    columnIssueCount: int = Field(default=0, ge=0)
 
 
 class ExtractResponse(ContractModel):
@@ -266,8 +270,13 @@ async def extract(
     result["summary"]["ambiguousRowCount"] = ambiguous_rows
     result["summary"]["uploadBytes"] = upload_size
     result["durationMs"] = round((time.perf_counter() - started) * 1000, 2)
-    result["requiresReview"] = not tables or low_confidence > 0 or ambiguous_rows > 0
-    warnings: list[str] = []
+    column_issues = [issue for table in tables for issue in table.get("columnIssues", [])]
+    column_notes = [note for table in tables for note in table.get("columnNotes", [])]
+    result["summary"]["columnIssueCount"] = len(column_issues)
+    result["requiresReview"] = (
+        not tables or low_confidence > 0 or ambiguous_rows > 0 or bool(column_issues)
+    )
+    warnings: list[str] = [*column_issues, *column_notes]
     if not tables:
         warnings.append("AI chưa phát hiện được vùng bảng trong workbook.")
     if low_confidence:

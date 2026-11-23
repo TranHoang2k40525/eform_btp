@@ -1,0 +1,95 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Kiến trúc đề xuất</title>
+<style>body{margin:0;background:#fff} svg text{font-family:Arial,Helvetica,sans-serif}</style></head>
+<body>
+<svg id="d" width="1500" height="640" viewBox="0 0 1500 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f3864"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2e6b2e"/></marker>
+  </defs>
+  <rect width="1500" height="640" fill="#fff"/>
+  <text x="750" y="40" font-size="24" font-weight="bold" text-anchor="middle" fill="#1f3864">Kiến trúc đề xuất ban đầu của Module nhập Excel thông minh</text>
+  <rect x="470" y="58" width="560" height="50" rx="6" fill="#f4f6fa" stroke="#9aa7bd"/>
+  <text x="750" y="80" font-size="15" text-anchor="middle" fill="#333">Luồng chính đi một chiều từ trái sang phải;</text>
+  <text x="750" y="100" font-size="15" text-anchor="middle" fill="#333">các khối phía dưới chỉ cung cấp dữ liệu hỗ trợ.</text>
+
+  <g font-size="15" text-anchor="middle">
+    <!-- row 1: boxes 1-5 -->
+    <g fill="#eef3fb" stroke="#1f3864" stroke-width="2">
+      <rect x="20" y="150" width="230" height="90" rx="8"/>
+      <rect x="320" y="150" width="230" height="90" rx="8"/>
+      <rect x="620" y="150" width="230" height="90" rx="8"/>
+      <rect x="920" y="150" width="250" height="90" rx="8"/>
+      <rect x="1240" y="150" width="240" height="90" rx="8"/>
+    </g>
+    <text x="135" y="190" font-weight="bold">1. Người dùng</text><text x="135" y="212">chọn file Excel</text>
+    <text x="435" y="184" font-weight="bold">2. Chức năng nhập</text><text x="435" y="206">nhận file, điều phối</text><text x="435" y="226">các bước xử lý</text>
+    <text x="735" y="184" font-weight="bold">3. Đọc cấu trúc</text><text x="735" y="206">file Excel</text><text x="735" y="226">(sheet, ô, ô gộp)</text>
+    <text x="1045" y="184" font-weight="bold">4. Tạo ngữ cảnh cột</text><text x="1045" y="206">tiêu đề nhiều tầng,</text><text x="1045" y="226">mã cột, kiểu dữ liệu</text>
+    <text x="1360" y="184" font-weight="bold">5. Mô hình AI</text><text x="1360" y="206">ánh xạ cột → chỉ tiêu</text><text x="1360" y="226">(mô hình nhúng tinh chỉnh)</text>
+
+    <!-- row 2: boxes 6-9 (right to left) -->
+    <g fill="#eef3fb" stroke="#1f3864" stroke-width="2">
+      <rect x="1240" y="330" width="240" height="90" rx="8"/>
+      <rect x="920" y="330" width="250" height="90" rx="8"/>
+      <rect x="620" y="330" width="230" height="90" rx="8"/>
+      <rect x="320" y="330" width="230" height="90" rx="8"/>
+    </g>
+    <text x="1360" y="366" font-weight="bold">6. Kiểm tra nghiệp vụ</text><text x="1360" y="390">theo quy tắc của biểu</text>
+    <text x="1045" y="366" font-weight="bold">7. Tạo bảng xem trước</text><text x="1045" y="390">giữ tiêu đề, ô gộp</text>
+    <text x="735" y="366" font-weight="bold">8. Người dùng kiểm tra</text><text x="735" y="390">và xác nhận</text>
+    <text x="435" y="366" font-weight="bold">9. Ghi số liệu</text><text x="435" y="390">vào eForm</text>
+
+    <!-- support boxes -->
+    <g fill="#eaf5ea" stroke="#2e6b2e" stroke-width="2">
+      <rect x="1180" y="500" width="300" height="80" rx="8"/>
+      <rect x="560" y="500" width="350" height="80" rx="8"/>
+      <rect x="250" y="500" width="250" height="80" rx="8"/>
+    </g>
+    <text x="1330" y="532" font-weight="bold">Thông tin biểu mẫu eForm</text><text x="1330" y="556">biểu mẫu, chỉ tiêu, quy tắc</text>
+    <text x="735" y="532" font-weight="bold">Dữ liệu phản hồi đã xác minh</text><text x="735" y="556">các lần người dùng sửa ánh xạ</text>
+    <text x="375" y="532" font-weight="bold">Cơ sở dữ liệu eForm</text><text x="375" y="556">số liệu báo cáo</text>
+
+    <rect x="20" y="460" width="210" height="160" rx="8" fill="#fffbe6" stroke="#b08900" stroke-width="1.5"/>
+    <text x="125" y="486" font-weight="bold" fill="#7a5c00">Nguyên tắc thiết kế</text>
+    <text x="30" y="512" text-anchor="start">• AI chỉ chọn chỉ tiêu</text>
+    <text x="30" y="532" text-anchor="start">  phù hợp</text>
+    <text x="30" y="556" text-anchor="start">• Giá trị lấy nguyên</text>
+    <text x="30" y="576" text-anchor="start">  từ file Excel</text>
+    <text x="30" y="600" text-anchor="start">• AI không ghi thẳng CSDL</text>
+  </g>
+
+  <g stroke="#1f3864" stroke-width="2.2" fill="none">
+    <line x1="250" y1="195" x2="318" y2="195" marker-end="url(#a)"/>
+    <line x1="550" y1="195" x2="618" y2="195" marker-end="url(#a)"/>
+    <line x1="850" y1="195" x2="918" y2="195" marker-end="url(#a)"/>
+    <line x1="1170" y1="195" x2="1238" y2="195" marker-end="url(#a)"/>
+    <line x1="1360" y1="240" x2="1360" y2="328" marker-end="url(#a)"/>
+    <line x1="1240" y1="375" x2="1172" y2="375" marker-end="url(#a)"/>
+    <line x1="920" y1="375" x2="852" y2="375" marker-end="url(#a)"/>
+    <line x1="620" y1="375" x2="552" y2="375" marker-end="url(#a)"/>
+  </g>
+  <g font-size="13" fill="#1f3864" text-anchor="middle">
+    <text x="284" y="185">Tải file</text>
+    <text x="584" y="185">File</text>
+    <text x="884" y="185">Cấu trúc</text>
+    <text x="1204" y="185">Ngữ cảnh</text>
+    <text x="1430" y="290">Các chỉ tiêu</text><text x="1430" y="306">phù hợp nhất</text>
+    <text x="1206" y="365">Hợp lệ</text>
+    <text x="886" y="365">Xem trước</text>
+    <text x="586" y="365">Xác nhận</text>
+  </g>
+  <g stroke="#2e6b2e" stroke-width="2" stroke-dasharray="7 5" fill="none">
+    <path d="M1250,500 L1250,300 L1300,300 L1300,242" marker-end="url(#g)"/>
+    <line x1="1400" y1="500" x2="1400" y2="422" marker-end="url(#g)"/>
+    <line x1="735" y1="420" x2="735" y2="498" marker-end="url(#g)"/>
+    <line x1="435" y1="420" x2="400" y2="498" marker-end="url(#g)"/>
+  </g>
+  <g font-size="13" fill="#2e6b2e">
+    <text x="1120" y="290">Chỉ tiêu ứng viên</text>
+    <text x="1408" y="470">Quy tắc</text>
+    <text x="745" y="465">Ánh xạ đã sửa</text>
+    <text x="425" y="470" text-anchor="end">Lưu chính thức</text>
+  </g>
+</svg>
+</body></html>

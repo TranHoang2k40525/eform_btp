@@ -20,6 +20,10 @@ namespace ImportDocument.Infrastructure
             var builder = new MySqlConnectionStringBuilder(configured.ConnectionString);
             if (!string.IsNullOrWhiteSpace(dataSource))
                 builder.Database = dataSource;
+            // Không khai charset thì MySQL 5.7 dùng mặc định latin1 của máy chủ: chữ tiếng Việt
+            // trong JsonData / FileName bị ghi thành '?'.
+            if (string.IsNullOrWhiteSpace(builder.CharacterSet))
+                builder.CharacterSet = "utf8mb4";
             return new MySqlConnection(builder.ConnectionString);
         }
 

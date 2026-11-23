@@ -4,6 +4,7 @@ using System.Web.Http;
 using System.Web.Http.Dependencies;
 using Ninject;
 using Ninject.Syntax;
+using Ninject.Web.Common;
 using ImportDocument.Application.Services;
 using ImportDocument.Domain.Interfaces;
 using ImportDocument.Infrastructure;

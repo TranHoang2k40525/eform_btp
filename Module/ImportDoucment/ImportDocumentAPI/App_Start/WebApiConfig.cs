@@ -12,6 +12,9 @@ namespace ImportDocumentAPI
                 new CamelCasePropertyNamesContractResolver();
             config.Formatters.JsonFormatter.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
 
+            // CORS và JWT cho /api/import
+            config.MessageHandlers.Add(new ImportDocument.ImportApi.Security.EformGatewayHandler());
+
             config.MapHttpAttributeRoutes();
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",

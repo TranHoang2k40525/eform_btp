@@ -39,10 +39,12 @@ FEATURE_CHANNELS = 18 + TEXT_HASH_DIM
 NUMBER_IN_TEXT_RE = re.compile(r"\d+(?:[.,]\d+)*")
 FOOTER_TEXT_RE = re.compile(
     r"\b(ghi chu|nguoi lap bieu|nguoi kiem tra|ky,|dong dau|thu truong|giam doc)\b"
+    r"|^o co dau|khong phai bao cao|^tu cot \(?\d"
 )
 METADATA_TEXT_RE = re.compile(
     r"\b(bieu so|ban hanh theo|ngay nhan bao cao|co so bo nam|don vi bao cao|"
-    r"don vi nhan bao cao|ky bao cao|tu ngay|den ngay)\b"
+    # "trong kỳ báo cáo" là chữ trong tiêu đề cột, không phải dòng "Kỳ báo cáo: …"
+    r"don vi nhan bao cao|(?<!trong )ky bao cao|tu ngay|den ngay)\b"
 )
 TOTAL_ROW_RE = re.compile(r"^(tong so|tong cong|cong chung)(?:\b|$)")
 ROMAN_ROW_RE = re.compile(r"^[ivxlcdm]+$", re.IGNORECASE)
@@ -483,6 +485,97 @@ def prediction_to_tables(
     return tables
 
 
+def _looks_like_code_row(values: list[Any]) -> bool:
+    """Dòng mã cột: chỉ gồm chữ cái cột (A, B...) và số thứ tự cột viết dạng (1), 1 hoặc -1.
+    Các số phải là một dãy liên tiếp bắt đầu từ 1 (cho phép đảo chỗ)."""
+    numbers: list[int] = []
+    for value in values:
+        text = clean_text(value)
+        if not text:
+            continue
+        if re.fullmatch(r"[A-Za-z]{1,2}", text):
+            continue
+        match = re.fullmatch(r"\(?-?(\d{1,3})\)?(?:\.0)?", text)
+        if not match:
+            return False
+        numbers.append(int(match.group(1)))
+    return len(numbers) >= 3 and sorted(numbers) == list(range(1, len(numbers) + 1))
+
+
+def split_table_at_gaps(worksheet: Any, table: dict[str, Any], min_gap: int = 2) -> list[dict[str, Any]]:
+    """Mô hình có thể nối bảng chính với một bảng phụ đặt ngay bên dưới. Khi giữa hai phần có từ
+    min_gap dòng trống hoàn toàn (không chữ, không khung), tách thành hai vùng riêng."""
+    left, right = int(table["left"]), int(table["right"])
+    top, bottom = int(table["top"]), int(table["bottom"])
+    start = max(top, int(table.get("header_bottom", top))) + 1
+
+    def empty_row(row: int) -> bool:
+        for column in range(left, right + 1):
+            if clean_text(_cell_value(worksheet, row, column)):
+                return False
+            border = worksheet.cell(row, column).border
+            if any(getattr(getattr(border, side, None), "style", None) for side in ("left", "right", "top", "bottom")):
+                return False
+        return True
+
+    row, run_start = start, None
+    while row <= bottom:
+        if empty_row(row):
+            run_start = row if run_start is None else run_start
+        else:
+            if run_start is not None and row - run_start >= min_gap and run_start > start:
+                first = dict(table, bottom=run_start - 1)
+                first["header_bottom"] = min(int(first["header_bottom"]), first["bottom"])
+                rest = dict(table, top=row, header_bottom=row)
+                return [first] + split_table_at_gaps(worksheet, rest, min_gap)
+            run_start = None
+        row += 1
+    return [table]
+
+
+def merge_header_fragments(worksheet: Any, regions: list[dict[str, Any]], max_gap: int = 2) -> list[dict[str, Any]]:
+    """File bỏ hết ô gộp: phần tiêu đề nhiều tầng có thể bị mô hình cắt rời khỏi bảng số liệu.
+    Một vùng chỉ có chữ (không ô số) nằm ngay trên một bảng mở đầu bằng dòng số thứ tự cột,
+    cách không quá max_gap dòng và nằm trong dải cột của bảng đó, là phần tiêu đề của bảng → ghép lại."""
+    ordered = sorted(regions, key=lambda item: (int(item["top"]), int(item["left"])))
+    merged_into: set[int] = set()
+    result: list[dict[str, Any]] = []
+
+    def has_numbers(region: dict[str, Any]) -> bool:
+        for row in range(int(region["top"]), int(region["bottom"]) + 1):
+            for column in range(int(region["left"]), int(region["right"]) + 1):
+                value = _cell_value(worksheet, row, column)
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    return True
+        return False
+
+    for index, table in enumerate(ordered):
+        if index in merged_into:
+            continue
+        top, left, right = int(table["top"]), int(table["left"]), int(table["right"])
+        head_end = min(int(table["bottom"]), max(top, int(table.get("header_bottom", top))), top + 5)
+        if any(_looks_like_code_row([_cell_value(worksheet, row, column) for column in range(left, right + 1)])
+               for row in range(top, head_end + 1)):
+            for other_index in range(index - 1, -1, -1):
+                if other_index in merged_into:
+                    continue
+                piece = ordered[other_index]
+                gap = top - int(piece["bottom"]) - 1
+                # gap < 0: bảng đã được kéo lên chồng một phần lên mảnh tiêu đề
+                if not (gap <= max_gap and int(piece["top"]) < top):
+                    continue
+                if int(piece["left"]) < left - 1 or int(piece["right"]) > right or has_numbers(piece):
+                    continue
+                table = dict(table, top=int(piece["top"]), left=min(left, int(piece["left"])),
+                             postprocessing="header-fragment-merge")
+                table["header_bottom"] = max(int(table["header_bottom"]), top)
+                merged_into.add(other_index)
+                result = [item for item in result if item is not piece]
+                break
+        result.append(table)
+    return result
+
+
 def refine_table_bounds(worksheet: Any, table: dict[str, Any]) -> dict[str, Any]:
     """Refine model bounds around a real table while preserving its merged layout."""
     refined = dict(table)
@@ -503,6 +596,23 @@ def refine_table_bounds(worksheet: Any, table: dict[str, Any]) -> dict[str, Any]
                 return True
         return False
 
+    def row_has_vertical_merge(row: int) -> bool:
+        # Ô tiêu đề cột thường gộp dọc xuống các tầng dưới (STT, Tổng số…); dòng tên biểu chỉ gộp ngang
+        for merged_range in worksheet.merged_cells.ranges:
+            merge_left, merge_top, merge_right, merge_bottom = range_boundaries(str(merged_range))
+            # chỉ ô hẹp (≤ 3 cột): tên biểu gộp nhiều dòng thì luôn trải rộng
+            if (merge_top == row and merge_bottom > row and merge_left >= left and merge_right <= right
+                    and merge_right - merge_left <= 2):
+                return True
+        return False
+
+    def numeric_text_count(values: list[Any]) -> int:
+        # Số lưu dạng chữ ("1.234", "12,5")
+        return sum(
+            isinstance(value, str) and bool(re.fullmatch(r"-?\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?|-?\d+(?:[.,]\d+)?", value.strip()))
+            for value in values
+        )
+
     def row_profile(row: int) -> tuple[list[Any], int, int, int, bool, bool]:
         values = row_values(row)
         cells = [worksheet.cell(row, column) for column in range(left, right + 1)]
@@ -512,7 +622,7 @@ def refine_table_bounds(worksheet: Any, table: dict[str, Any]) -> dict[str, Any]
             for value in values
         )
         bordered = sum(
-            any(getattr(cell.border, side).style for side in ("left", "right", "top", "bottom"))
+            any(getattr(getattr(cell.border, side, None), "style", None) for side in ("left", "right", "top", "bottom"))
             for cell in cells
         )
         text = fold_text(" ".join(clean_text(value) for value in values if value is not None))
@@ -532,7 +642,8 @@ def refine_table_bounds(worksheet: Any, table: dict[str, Any]) -> dict[str, Any]
             or row_profile(future_row)[1] >= max(2, math.ceil(width * 0.50))
             for future_row in future_rows
         )
-        if numeric == 0 and weak_grid and has_future_table and (metadata_text or merged or sparse):
+        if (numeric == 0 and weak_grid and has_future_table and (metadata_text or merged or sparse)
+                and not (not metadata_text and row_has_vertical_merge(top))):
             top += 1
             continue
         break
@@ -546,10 +657,47 @@ def refine_table_bounds(worksheet: Any, table: dict[str, Any]) -> dict[str, Any]
             continue
         break
 
+    # Mép trên cắt ngang một ô tiêu đề gộp dọc (STT, Tổng số… gộp từ tầng trên xuống) → vùng dự đoán
+    # đã bỏ sót các tầng tiêu đề phía trên: kéo mép lên tới đỉnh ô gộp (tối đa 6 dòng).
+    for _ in range(8):
+        new_top = top
+        for merged_range in worksheet.merged_cells.ranges:
+            merge_left, merge_top, merge_right, merge_bottom = range_boundaries(str(merged_range))
+            if (merge_top < top <= merge_bottom and merge_left >= left and merge_right <= right
+                    and merge_right - merge_left <= 2 and top - merge_top <= 6):
+                new_top = min(new_top, merge_top)
+        if new_top == top:
+            break
+        top = new_top
+
+    # File không có ô gộp: tầng tiêu đề trên cùng (nhiều ô chữ, không số, không phải dòng
+    # "Biểu số / Đơn vị báo cáo…") nằm sát mép trên mà chưa được lấy → lấy thêm, tối đa 3 dòng.
+    for _ in range(3):
+        if top - 1 < 1:
+            break
+        values = row_values(top - 1)
+        texts = [clean_text(value) for value in values]
+        nonempty = sum(bool(text) for text in texts)
+        numeric = sum(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values)
+        folded = fold_text(" ".join(text for text in texts if text))
+        if nonempty >= 3:
+            folded = re.sub(r"\bghi chu\b", " ", folded)   # cột "Ghi chú" của tiêu đề, không phải dòng ghi chú
+        outside = any(clean_text(_cell_value(worksheet, top - 1, column)) for column in (left - 1, right + 1) if column >= 1)
+        if (nonempty >= max(2, math.ceil(width * 0.15)) and numeric == 0 and numeric_text_count(values) == 0
+                and not outside and not METADATA_TEXT_RE.search(folded) and not FOOTER_TEXT_RE.search(folded)
+                and not _looks_like_code_row(values)):
+            top -= 1
+            continue
+        break
+
     header_bottom = max(top, min(bottom, int(refined["header_bottom"])))
     first_value_row = None
     for row in range(top + 1, bottom + 1):
         values, nonempty, numeric, bordered, _, _ = row_profile(row)
+        if _looks_like_code_row(values):
+            continue
+        if numeric == 0 and numeric_text_count(values) >= 2:
+            numeric = numeric_text_count(values)
         if numeric > 0 and nonempty >= max(1, math.ceil(width * 0.20)):
             first_value_row = row
             break
@@ -565,11 +713,39 @@ def refine_table_bounds(worksheet: Any, table: dict[str, Any]) -> dict[str, Any]
         sparse = nonempty <= max(1, math.ceil(width * 0.30))
         weak_grid = bordered < math.ceil(width * 0.35)
         footer_text = bool(FOOTER_TEXT_RE.search(text))
-        if numeric == 0 and weak_grid and (sparse or footer_text):
+        # Dòng trống ở đáy: bỏ, trừ khi đó là dòng nhập liệu duy nhất của bảng (biểu chưa điền)
+        blank_row = nonempty == 0 and numeric == 0 and bottom - 1 > header_bottom
+        # Dòng ghi chú ("Ô có dấu "-" không phải báo cáo") đôi khi nằm trong khung kẻ của bảng
+        note_in_grid = numeric == 0 and footer_text and nonempty <= 2
+        if blank_row or note_in_grid or (numeric == 0 and weak_grid and (sparse or footer_text)):
             bottom -= 1
             trimmed += 1
             continue
         break
+
+    # Cột trống hoàn toàn ở mép trái/phải (không chữ, không khung, không thuộc ô gộp) không thuộc bảng —
+    # để lại sẽ làm lệch thứ tự cột khi ghép vào biểu (bảng bị đẩy sang phải trong file).
+    merge_boxes = [range_boundaries(str(merged_range)) for merged_range in worksheet.merged_cells.ranges]
+
+    def column_empty(column: int) -> bool:
+        for merge_left, merge_top, merge_right, merge_bottom in merge_boxes:
+            if merge_left <= column <= merge_right and merge_top <= bottom and merge_bottom >= top:
+                return False
+        for row in range(top, bottom + 1):
+            if clean_text(_cell_value(worksheet, row, column)):
+                return False
+            border = worksheet.cell(row, column).border
+            if any(getattr(getattr(border, side, None), "style", None) for side in ("left", "right", "top", "bottom")):
+                return False
+        return True
+
+    while right > left and column_empty(left):
+        left += 1
+    while right > left and column_empty(right):
+        right -= 1
+    if left != int(table["left"]) or right != int(table["right"]):
+        refined["left"], refined["right"] = left, right
+        refined["postprocessing"] = "structural-boundary-refine-v2"
 
     refined["top"] = top
     refined["bottom"] = bottom
@@ -759,6 +935,51 @@ def _normalized_row_code(value: Any) -> str:
     return re.sub(r"[\s.):]+$", "", text).strip()
 
 
+def _is_label_text(value: Any) -> bool:
+    """Ô mang tên dòng: chuỗi có chữ cái, không phải số, ký hiệu trống ("-", "x") hay lỗi công thức."""
+    if value is None or isinstance(value, (int, float, bool)):
+        return False
+    text = clean_text(value)
+    if len(text) < 3 or text.startswith("#"):
+        return False
+    if re.fullmatch(r"[-+]?\d+(?:[.,]\d+)*%?", text):
+        return False
+    return sum(character.isalpha() for character in text) >= 2
+
+
+def _label_text_share(data: list[list[Any]], header_rows: int, column: int) -> tuple[float, int]:
+    """Tỷ lệ ô có tên dòng trên các ô có giá trị của cột (và số ô đó)."""
+    filled = 0
+    labels = 0
+    for row in data[header_rows:]:
+        if column >= len(row):
+            continue
+        if clean_text(row[column]):
+            filled += 1
+            if _is_label_text(row[column]):
+                labels += 1
+    return (labels / filled if filled else 0.0), labels
+
+
+def _is_label_column(data: list[list[Any]], header_rows: int, column: int) -> bool:
+    """Cột tên dòng: phần lớn ô có giá trị là tên, và có tên ở ít nhất 30% số dòng số liệu."""
+    share, count = _label_text_share(data, header_rows, column)
+    value_rows = max(0, len(data) - header_rows)
+    if share < LABEL_MIN_SHARE or count < max(1, math.ceil(value_rows * 0.30)):
+        return False
+    # Tên dòng hầu như không lặp lại; cột ghi chú lặp một câu ("không báo cáo") thì không phải cột tên.
+    distinct = {
+        fold_text(row[column]) for row in data[header_rows:]
+        if column < len(row) and _is_label_text(row[column])
+    }
+    return len(distinct) >= max(1, math.ceil(count * 0.5))
+
+
+LABEL_HEADER_RE = re.compile(r"\b(chi tieu|noi dung|ten don vi|don vi|co quan|to chuc)\b")
+DATA_HEADER_RE = re.compile(r"\b(ghi chu|tong so|trong do|chia ra|so luong|doanh thu)\b")
+LABEL_MIN_SHARE = 0.5
+
+
 def _row_identity_columns(
     data: list[list[Any]],
     columns: list[dict[str, Any]],
@@ -775,9 +996,13 @@ def _row_identity_columns(
         folded = fold_text(labels)
         if code_column is None and re.search(r"\b(stt|so thu tu)\b", folded):
             code_column = index
-        if label_column is None and re.search(
-            r"\b(chi tieu|noi dung|ten don vi|don vi|co quan|to chuc)\b",
-            folded,
+        # Tiêu đề gợi ý cột tên dòng ("tổ chức", "đơn vị"...) chỉ được nhận khi cột thật sự chứa tên:
+        # cột số liệu như "Số luật sư hành nghề tại tổ chức" cũng có chữ "tổ chức".
+        if (
+            label_column is None
+            and index != code_column
+            and LABEL_HEADER_RE.search(folded)
+            and _is_label_column(data, header_rows, index)
         ):
             label_column = index
 
@@ -798,13 +1023,95 @@ def _row_identity_columns(
                 break
 
     if label_column is None:
-        if code_column is not None and code_column + 1 < column_count:
-            label_column = code_column + 1
+        positional = code_column + 1 if code_column is not None and code_column + 1 < column_count else 0
+        if _is_label_column(data, header_rows, positional):
+            label_column = positional
         else:
-            label_column = 0
+            # Theo nội dung: cột có nhiều tên dòng nhất (file lệch cột vẫn tìm ra tên dòng).
+            best: tuple[int, int] | None = None
+            for candidate in range(column_count):
+                if candidate == code_column or not _is_label_column(data, header_rows, candidate):
+                    continue
+                count = _label_text_share(data, header_rows, candidate)[1]
+                if best is None or count > best[1]:
+                    best = (candidate, count)
+            label_column = best[0] if best else positional
     if code_column == label_column:
         code_column = None
     return code_column, label_column
+
+
+def _column_issues(
+    data: list[list[Any]],
+    columns: list[dict[str, Any]],
+    header_rows: int,
+    code_column: int | None,
+    label_column: int | None,
+) -> tuple[list[str], list[str]]:
+    """Đối chiếu nội dung với tiêu đề cột. Trả về (lỗi lệch cột - chặn nhập, ghi chú - chỉ cảnh báo)."""
+    issues: list[str] = []
+    if not data or not data[0] or label_column is None:
+        return issues, []
+    column_count = len(data[0])
+    value_rows = data[header_rows:]
+    if not value_rows:
+        return issues, []
+
+    def column_name(index: int) -> str:
+        meta = columns[index] if index < len(columns) else {}
+        letter = meta.get("excelColumn") or get_column_letter(index + 1)
+        path = meta.get("headerPath") or []
+        return f'{letter} "{path[-1]}"' if path else str(letter)
+
+    # Tên dòng theo mẫu nằm ngay sau cột STT. Chỉ coi là lệch cột khi cột đang chứa tên dòng lại mang
+    # tiêu đề của cột số liệu / ghi chú (có mã cột (n) hoặc tiêu đề kiểu "Ghi chú", "Tổng số"...).
+    expected = code_column + 1 if code_column is not None and code_column + 1 < column_count else None
+    if expected is not None and expected != label_column:
+        label_meta = columns[label_column] if label_column < len(columns) else {}
+        label_header = fold_text(" ".join(label_meta.get("headerPath", [])))
+        data_like = bool(re.fullmatch(r"\(?\d+\)?", clean_text(label_meta.get("columnCode")))) or bool(
+            DATA_HEADER_RE.search(label_header)
+        )
+        if (
+            data_like
+            and not LABEL_HEADER_RE.search(label_header)
+            and _label_text_share(data, header_rows, expected)[0] < 0.2
+        ):
+            issues.append(
+                f"Tên dòng đang nằm ở cột {column_name(label_column)} thay vì cột "
+                f"{column_name(expected)}; số liệu trong file không khớp với tiêu đề cột."
+            )
+
+    # Cột số liệu (có mã cột (1), (2)...) mà phần lớn ô lại là tên dòng
+    for column in columns:
+        index = int(column["columnIndex"])
+        if index == label_column or not re.fullmatch(r"\(?\d+\)?", clean_text(column.get("columnCode"))):
+            continue
+        share, count = _label_text_share(data, header_rows, index)
+        if count >= max(3, math.ceil(len(value_rows) * 0.5)) and share >= 0.8:
+            issues.append(
+                f"Cột {column_name(index)} là cột số liệu nhưng phần lớn ô lại là tên dòng."
+            )
+
+    error_cells = sum(
+        1 for row in value_rows for value in row
+        if isinstance(value, str) and re.fullmatch(r"#(?:ERROR|VALUE|REF|DIV/0|NAME\?|N/A|NUM|NULL)!?", value.strip().upper())
+    )
+    notes: list[str] = []
+    numbered = []
+    for column in columns:
+        match = re.fullmatch(r"\(?-?(\d{1,3})\)?", clean_text(column.get("columnCode")))
+        if match:
+            numbered.append(int(match.group(1)))
+    if len(numbered) >= 3 and len(set(numbered)) == len(numbered) and numbered != sorted(numbered):
+        first_bad = next(i for i in range(1, len(numbered)) if numbered[i] < numbered[i - 1])
+        notes.append(
+            f"Thứ tự cột trong file khác thứ tự chuẩn của biểu mẫu (cột ({numbered[first_bad - 1]}) "
+            f"đứng trước cột ({numbered[first_bad]})). Hãy kiểm tra lại trước khi nhập."
+        )
+    if error_cells:
+        notes.append(f"Có {error_cells} ô bị lỗi công thức trong file (ví dụ #ERROR!).")
+    return issues, notes
 
 
 def _row_hierarchy(
@@ -987,6 +1294,10 @@ def extract_table_payload_with_values(
         header_rows,
         top,
     )
+    code_column, label_column = _row_identity_columns(data, column_metadata, header_rows)
+    column_issues, column_notes = _column_issues(
+        data, column_metadata, header_rows, code_column, label_column
+    )
     return {
         "sourceRange": f"{get_column_letter(left)}{top}:{get_column_letter(right)}{bottom}",
         "headerRows": header_rows,
@@ -1009,6 +1320,9 @@ def extract_table_payload_with_values(
         "postprocessing": table.get("postprocessing"),
         "trimmedHeaderRows": int(table.get("trimmed_header_rows", 0)),
         "trimmedFooterRows": int(table.get("trimmed_footer_rows", 0)),
+        "labelColumnIndex": label_column,
+        "columnIssues": column_issues,
+        "columnNotes": column_notes,
     }
 
 
@@ -1090,7 +1404,9 @@ class EFormPredictor:
                     int(self.inference_config.get("minimum_component_cells", 4)),
                     float(self.inference_config.get("header_fraction_threshold", 0.30)),
                 )
+                regions = [part for region in regions for part in split_table_at_gaps(worksheet, region)]
                 regions = [refine_table_bounds(worksheet, region) for region in regions]
+                regions = merge_header_fragments(worksheet, regions)
                 sheets.append({
                     "sheetIndex": sheet_index,
                     "sheetName": worksheet.title,

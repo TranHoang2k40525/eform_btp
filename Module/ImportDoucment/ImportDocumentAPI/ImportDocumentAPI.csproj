@@ -150,6 +150,8 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ImportController.cs" />
+    <Compile Include="Security\EformGatewayHandler.cs" />
+    <Compile Include="Security\EformJwtValidator.cs" />
     <Compile Include="App_Start\SwaggerConfig.cs" />
     <Compile Include="App_Start\SwaggerFileUploadFilter.cs" />
     <Compile Include="Global.asax.cs">
