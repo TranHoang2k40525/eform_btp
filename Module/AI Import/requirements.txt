@@ -1,3 +1,0 @@
-# Compatible with the installed Python 3.14.7.
-openpyxl==3.1.5
-

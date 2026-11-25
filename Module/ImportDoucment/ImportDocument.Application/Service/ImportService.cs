@@ -20,9 +20,6 @@ namespace ImportDocument.Application.Services
     {
         private static readonly HttpClient Http = CreateHttpClient();
         private readonly IImportRepository repository;
-        public ImportService()
-        {
-        }
 
         public ImportService(IImportRepository repository)
         {
@@ -223,14 +220,6 @@ namespace ImportDocument.Application.Services
             {
             }
             return responseJson.Length > 1000 ? responseJson.Substring(0, 1000) : responseJson;
-        }
-
-        private static int ReadPositiveSetting(string key, int fallback, int minimum, int maximum)
-        {
-            int configured;
-            if (!int.TryParse(ConfigurationManager.AppSettings[key], out configured))
-                return fallback;
-            return Math.Max(minimum, Math.Min(maximum, configured));
         }
 
         private static HttpClient CreateHttpClient()

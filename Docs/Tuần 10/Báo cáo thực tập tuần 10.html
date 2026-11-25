@@ -1,7 +1,100 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Báo cáo thực tập tuần 10</title><style>body{font-family:Arial;line-height:1.55;max-width:900px;margin:40px auto;color:#17324d}h1{text-align:center}h2{border-bottom:2px solid #2f80ed;padding-bottom:5px}.figure{text-align:center;margin:25px}.figure img{max-width:100%;border:1px solid #ccd8e2}</style></head><body>
-<h1>BÁO CÁO THỰC TẬP TUẦN 10</h1><h2>1. Nội dung thực hiện</h2><p>Trong tuần 10, em tập trung kiểm tra các trường hợp tệp không hợp lệ, hoàn thiện việc lưu kết quả và xử lý trường hợp hệ thống gặp lỗi.</p>
-<h2>2. Các công việc đã thực hiện</h2><ul><li>Kiểm tra định dạng, dung lượng, tệp rỗng và cấu trúc Excel.</li><li>Dừng xử lý và hướng dẫn người dùng khi tệp không hợp lệ.</li><li>Chỉ thông báo thành công sau khi việc lưu hoàn tất.</li><li>Thông báo lỗi rõ ràng nếu quá trình lưu không thành công.</li><li>Rà soát ranh giới bảng để loại phần mô tả ngoài bảng.</li></ul>
-<h2>3. Kết quả kiểm tra</h2><ul><li>Tệp hợp lệ: hiển thị bảng xem trước.</li><li>Tệp rỗng hoặc sai cấu trúc: cảnh báo và không lưu.</li><li>Tiêu đề nhiều tầng: giữ được cấu trúc bảng.</li><li>Lưu hợp lệ: xác nhận sau khi hoàn tất.</li></ul>
-<div class="figure"><img src="../Minh chứng/02_Thong_bao_xu_ly_loi.svg"><p>Hình 1. Minh chứng xử lý tệp không hợp lệ.</p></div><div class="figure"><img src="../Minh chứng/03_Thong_bao_luu_ket_qua.svg"><p>Hình 2. Minh chứng thông báo lưu kết quả.</p></div>
-<h2>4. Công việc còn lại</h2><p>Tiếp tục kiểm tra với nhiều biểu mẫu thực tế, đối chiếu quy tắc nghiệp vụ và kiểm tra trong môi trường triển khai trước khi nghiệm thu.</p>
-<h2>5. Tự đánh giá</h2><p>Em đã hoàn thiện phần kiểm tra lỗi và luồng lưu kết quả của module. Sản phẩm đáp ứng quy trình nhập tệp cơ bản và có thông báo phù hợp cho các trường hợp thành công hoặc thất bại.</p></body></html>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<title>Báo cáo thực tập tuần 10</title>
+<style>
+ body { font-family: "Times New Roman", serif; font-size: 13pt; line-height: 1.55; max-width: 960px; margin: 32px auto; padding: 0 24px; color: #1a1a1a; background: #fff; }
+ h1 { font-size: 20pt; color: #1b365d; text-align: center; margin-bottom: 6px; }
+ h2 { font-size: 15pt; color: #1b365d; border-bottom: 1px solid #d0d7de; padding-bottom: 4px; margin-top: 26px; }
+ h3 { font-size: 13.5pt; color: #1f4e79; margin-top: 18px; }
+ h4 { font-size: 13pt; color: #2b547e; margin-top: 14px; }
+ table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12pt; }
+ th, td { border: 1px solid #888; padding: 7px 10px; vertical-align: top; }
+ th { background: #eef3fb; color: #1b365d; font-weight: bold; }
+ figure { margin: 16px 0 4px 0; text-align: center; }
+ figure img { max-width: 100%; border: 1px solid #ccc; border-radius: 3px; }
+ p.caption { text-align: center; font-size: 11.5pt; color: #444; margin-top: 2px; margin-bottom: 16px; }
+ .tag { font-weight: 600; }
+ hr { border: none; border-top: 1px solid #d0d7de; margin: 18px 0; }
+</style>
+</head>
+<body>
+<h1>BÁO CÁO THỰC TẬP TUẦN 10</h1>
+<p><strong>HỌP TIẾN ĐỘ DỰ ÁN, SỬA TÍNH NĂNG GIAO BÁO CÁO HÀNG LOẠT 3 CẤP, THIẾT LẬP MÔI TRƯỜNG KỲ BÁO CÁO THỬ NGHIỆM VÀ HOÀN TẤT XỬ LÝ NGOẠI LỆ, KIỂM THỬ TOÀN TRÌNH MODULE AI IMPORT</strong></p>
+<hr/>
+<h2>BẢNG THÔNG TIN SINH VIÊN VÀ ĐỀ TÀI</h2>
+<table>
+<tr><th>Thông tin</th><th>Chi tiết</th></tr>
+<tr><td><strong>Sinh viên thực hiện</strong></td><td><strong>Trần Văn Hoàng</strong></td></tr>
+<tr><td><strong>Mã số sinh viên (MSSV)</strong></td><td><strong>0034467</strong></td></tr>
+<tr><td><strong>Lớp chuyên ngành</strong></td><td>67CS – Khóa K67</td></tr>
+<tr><td><strong>Đơn vị thực tập</strong></td><td>Công ty Cổ phần BEDX</td></tr>
+<tr><td><strong>Bộ phận công tác</strong></td><td>Trung tâm Nền tảng chuyển đổi số</td></tr>
+<tr><td><strong>Cán bộ hướng dẫn tại đơn vị</strong></td><td><strong>Đào Đức Văn</strong></td></tr>
+<tr><td><strong>Dự án tham gia</strong></td><td>Hệ thống báo cáo điện tử eForm</td></tr>
+<tr><td><strong>Đề tài nghiên cứu</strong></td><td>Nghiên cứu và ứng dụng AI xây dựng Module Import file Excel thông minh, tự động ánh xạ dữ liệu cho hệ thống Báo cáo thống kê eForm.</td></tr>
+</table>
+<hr/>
+<h2>I. THÔNG TIN CHUNG VÀ KẾ HOẠCH THỰC HIỆN TUẦN 10</h2>
+<p>Trong tuần thực tập thứ 10, em tập trung chuẩn bị cho đợt mở kỳ báo cáo thử nghiệm diện rộng trên Dự án chính eForm BTP và hoàn thiện kiến trúc xử lý ngoại lệ đa tầng, luồng xác nhận lưu kết quả cho Module AI Import Excel.</p>
+<h3>Bảng tổng hợp công việc Tuần 10</h3>
+<table>
+<tr><th>STT</th><th>Nội dung công việc được giao</th><th>Kết quả thực hiện</th><th>Đánh giá</th></tr>
+<tr><td><strong>Nhiệm vụ 1</strong></td><td>Họp bàn về tiến độ dự án eForm và nhận nhiệm vụ tuần 10</td><td>Đã báo cáo kết quả tuần 8, 9; nắm bắt kế hoạch mở kỳ báo cáo thử nghiệm và tiếp nhận phân công mới.</td><td><strong>Hoàn thành</strong></td></tr>
+<tr><td><strong>Nhiệm vụ 2</strong></td><td>Sửa lại tính năng giao báo cáo hàng loạt đa cấp</td><td>Hoàn thiện luồng phân bổ 3 cấp (cấp cha 01 → cấp con 01b → cấp 3 01a), giao thành công từ Cục Kế hoạch - Tài chính xuống 34 Sở Tư pháp và 3.321 xã/phường.</td><td><strong>Hoàn thành</strong></td></tr>
+<tr><td><strong>Nhiệm vụ 3</strong></td><td>Thiết lập môi trường thử nghiệm: 3 tài khoản cục, 3 tài khoản xã, mở kỳ sơ bộ và tạo báo cáo mẫu</td><td>Khởi tạo hoàn chỉnh 3 nhóm tài khoản cấp cục, 3 nhóm tài khoản cấp xã, kích hoạt kỳ báo cáo sơ bộ và tạo đầy đủ báo cáo mẫu phục vụ kiểm thử.</td><td><strong>Hoàn thành</strong></td></tr>
+<tr><td><strong>Nhiệm vụ 4</strong></td><td>Kiểm thử tệp rỗng, sai định dạng, hỏng cấu trúc và tiêu đề phức tạp (Module AI Import)</td><td>Hoàn thiện cơ chế phòng vệ đa tầng, chặn chính xác tệp 0 byte và tệp hỏng cấu trúc OpenXML bằng thông báo tiếng Việt thân thiện.</td><td><strong>Hoàn thành</strong></td></tr>
+<tr><td><strong>Nhiệm vụ 5</strong></td><td>Hoàn thiện hộp thoại xác nhận lưu kết quả và kiểm thử toàn trình Module AI Import</td><td>Hoàn thành bước xác nhận, lưu vết giao dịch an toàn không xung đột hệ thống cũ, vượt qua 4/4 ca kiểm thử đầu – cuối (12/12 ca từ Tuần 8–10).</td><td><strong>Hoàn thành</strong></td></tr>
+</table>
+<hr/>
+<h2>II. MỤC 1: QUÁ TRÌNH THỰC TẬP TẠI DỰ ÁN CHÍNH CỦA CÔNG TY (HỆ THỐNG eFORM BTP)</h2>
+<h3>1. Họp bàn tiến độ và tiếp nhận nhiệm vụ chuẩn bị mở kỳ báo cáo thử nghiệm</h3>
+<p>Tại phiên họp giao ban tuần 10, em đã báo cáo toàn bộ kết quả đạt được trong tuần 8 và tuần 9. Trước yêu cầu mở kỳ báo cáo thử nghiệm toàn quốc, nhóm dự án xác định hai công việc ưu tiên cao nhất là khắc phục lỗi chức năng giao báo cáo hàng loạt 3 cấp và thiết lập môi trường thử nghiệm biệt lập đầy đủ tài khoản các cấp.</p>
+<hr/>
+<h3>2. Khắc phục tính năng giao báo cáo hàng loạt 3 cấp trên hệ thống eForm</h3>
+<h4>2.1. Hiện trạng và yêu cầu nghiệp vụ</h4>
+<p>Chức năng giao báo cáo hàng loạt cho phép cơ quan chủ quản phát hành đồng loạt cây báo cáo 3 cấp liên hoàn trong một lần thiết lập: từ biểu tổng hợp cấp Bộ (<span class='tag'>01/V/TH/TĐ-TĐG</span>), xuống biểu cấp tỉnh (<span class='tag'>01b/TP/TĐ</span>) tại các Sở Tư pháp và phân rã tới biểu cấp cơ sở (<span class='tag'>01a/TP/TĐ-BH</span>) tại 3.321 UBND xã/phường trên toàn quốc, với đơn vị giao là Cục Kế hoạch - Tài chính (cán bộ phụ trách Nguyễn Thị Thu Huyền) cho kỳ dữ liệu 6 tháng đầu năm 2026. Trước khi sửa lỗi, chức năng này bị đứt gãy chuỗi liên kết ở cấp 3 nên không thể phân rã danh sách xã/phường.</p>
+<h4>2.2. Giải pháp khắc phục</h4>
+<ul>
+<li>Khôi phục liên kết đồng bộ chuỗi báo cáo 3 cấp và xử lý chính xác cờ đánh dấu đã tới cấp cuối (cấp xã).</li>
+<li>Bổ sung cơ chế phân rã đệ quy cây tổ chức từ danh sách 34 Sở Tư pháp xuống đúng 3.321 đơn vị cấp xã/phường trực thuộc.</li>
+<li>Ánh xạ nhất quán thông tin đơn vị giao, người giao, kỳ báo cáo và các mốc thời gian hạn nộp cho toàn bộ bản ghi phát sinh trong một giao dịch an toàn.</li>
+</ul>
+<h4>2.3. Kết quả nghiệm thu và minh chứng thực tế</h4>
+<figure><img src='02_thiet_lap_giao_bao_cao_hang_loat_3_cap.png' alt='Thiết lập giao báo cáo hàng loạt 3 cấp'/></figure>
+<p class='caption'><em>Hình 1: Màn hình thiết lập giao báo cáo hàng loạt 3 cấp từ Cục Kế hoạch - Tài chính tới các Sở Tư pháp.</em></p>
+<figure><img src='03_danh_sach_don_vi_nhan_bao_cao_cap_xa_hang_loat.png' alt='Danh sách đơn vị nhận báo cáo cấp xã hàng loạt'/></figure>
+<p class='caption'><em>Hình 2: Danh sách 3.321 đơn vị cấp xã/phường trực thuộc 34 Sở Tư pháp được phân bổ tự động thành công.</em></p>
+<hr/>
+<h3>3. Thiết lập môi trường thử nghiệm và kích hoạt kỳ báo cáo sơ bộ</h3>
+<p>Em đã khởi tạo hoàn chỉnh môi trường thử nghiệm biệt lập gồm 3 nhóm tài khoản cấp Cục (Cục Kế hoạch - Tài chính, Cục Trợ giúp pháp lý, Cục Bổ trợ tư pháp), 3 nhóm tài khoản cấp xã đại diện cho các địa bàn khác nhau, mở kỳ báo cáo thử nghiệm sơ bộ và tạo sẵn bộ báo cáo mẫu có dữ liệu mô phỏng để các đơn vị trải nghiệm trọn vẹn quy trình nhập, duyệt và tổng hợp mà không ảnh hưởng dữ liệu sản xuất.</p>
+<figure><img src='01_ky_bao_cao_thu_nghiem_admin.png' alt='Giao diện quản trị kỳ báo cáo thử nghiệm'/></figure>
+<p class='caption'><em>Hình 3: Thiết lập và kích hoạt thành công kỳ báo cáo thử nghiệm sơ bộ trên cổng quản trị hệ thống.</em></p>
+<hr/>
+<h2>III. MỤC 2: NGHIÊN CỨU VÀ PHÁT TRIỂN MODULE AI IMPORT EXCEL THÔNG MINH</h2>
+<h3>4. Xây dựng kiến trúc phòng vệ đa tầng xử lý ngoại lệ đầu vào</h3>
+<p>Để module vận hành an toàn tuyệt đối trước các tệp đầu vào bất thường, em đã hoàn thiện cơ chế phòng vệ đa tầng: kiểm tra định dạng và dung lượng tệp ngay trên trình duyệt (chặn ngay tệp 0 byte và tệp vượt giới hạn dung lượng), thẩm định chữ ký cấu trúc nén OpenXML tại tầng dịch vụ trung gian để phát hiện tệp đổi đuôi giả mạo hoặc hỏng cấu trúc, và chuẩn hóa toàn bộ ngoại lệ thành thông báo tiếng Việt thân thiện.</p>
+<figure><img src='diagrams/01_LUONG_XU_LY_NGOAI_LE_VA_END_TO_END.png' alt='Sơ đồ luồng xử lý ngoại lệ và kiểm thử toàn trình'/></figure>
+<p class='caption'><em>Hình 4: Sơ đồ cơ chế phòng vệ đầu vào đa tầng và quy trình xác nhận lưu kết quả toàn trình.</em></p>
+<figure><img src='evidence/01_Kiem_tra_file_rong_0_byte.png' alt='Kiểm tra tệp rỗng 0 byte'/></figure>
+<p class='caption'><em>Hình 5: Hệ thống phát hiện và chặn ngay tệp Excel rỗng dung lượng 0 byte trước khi gửi lên máy chủ.</em></p>
+<figure><img src='evidence/02_Kiem_tra_file_sai_dinh_dang.png' alt='Kiểm tra tệp sai định dạng'/></figure>
+<p class='caption'><em>Hình 6: Cảnh báo rõ ràng khi người dùng tải lên tệp sai định dạng hoặc hỏng cấu trúc nén bảng tính.</em></p>
+<hr/>
+<h3>5. Hoàn thiện bước xác nhận lưu kết quả và kiểm thử toàn trình End-to-End</h3>
+<p>Bước cuối của quy trình hiển thị hộp thoại xác nhận tổng kết tên tệp, biểu mẫu đích và kết quả đối soát trước khi ghi dữ liệu vào biểu mẫu và lưu vết giao dịch trong cơ sở dữ liệu độc lập, bảo đảm hoàn toàn không xung đột với cấu trúc dữ liệu lõi của eForm.</p>
+<figure><img src='evidence/03_Xac_nhan_luu_ket_qua_co_so_du_lieu.png' alt='Hộp thoại xác nhận lưu kết quả'/></figure>
+<p class='caption'><em>Hình 7: Bước xác nhận tổng kết thông tin và lưu nhận kết quả an toàn trước khi hoàn tất chu trình nhập.</em></p>
+<table>
+<tr><th>Mã kiểm thử</th><th>Nội dung kiểm thử tự động</th><th>Kết quả ghi nhận</th><th>Đánh giá</th></tr>
+<tr><td><strong>T10.01</strong></td><td>Bắt lỗi tệp Excel rỗng dung lượng 0 byte</td><td>Chặn ngay trên trình duyệt kèm thông báo tiếng Việt rõ ràng</td><td><strong>ĐẠT</strong></td></tr>
+<tr><td><strong>T10.02</strong></td><td>Bắt lỗi tệp hỏng cấu trúc nén hoặc đổi đuôi giả mạo</td><td>Từ chối an toàn tại tầng thẩm định đầu vào, không gây lỗi hệ thống</td><td><strong>ĐẠT</strong></td></tr>
+<tr><td><strong>T10.03</strong></td><td>Xác nhận và lưu vết kết quả giao dịch nhập liệu</td><td>Lưu thành công đầy đủ thông tin truy vết, không xung đột CSDL cũ</td><td><strong>ĐẠT</strong></td></tr>
+<tr><td><strong>T10.04</strong></td><td>Kiểm thử toàn trình liên tục từ chọn tệp đến hoàn tất</td><td>Toàn bộ 12/12 ca kiểm thử tự động từ Tuần 8 đến Tuần 10 đều đạt 100%</td><td><strong>ĐẠT</strong></td></tr>
+</table>
+<hr/>
+<h2>IV. TỔNG KẾT TUẦN 10 VÀ KẾ HOẠCH TUẦN 11</h2>
+<p>Em đã hoàn thành 100% các đầu việc Tuần 10 trên cả hai nhánh công việc. Sang Tuần 11, em sẽ xử lý các lỗi hiển thị và phân quyền phát sinh từ đợt dùng thử thực tế (thanh điều hướng báo cáo con, phân quyền báo cáo bị trả lại) và tổ chức buổi trình diễn nội bộ (Showcase) Module AI Import Excel trước nhóm phát triển và cán bộ hướng dẫn.</p>
+</body>
+</html>

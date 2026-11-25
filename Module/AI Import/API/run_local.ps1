@@ -1,11 +1,10 @@
-﻿$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Stop"
 
 $apiRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $moduleRoot = Split-Path -Parent $apiRoot
 $repositoryRoot = Split-Path (Split-Path $moduleRoot -Parent) -Parent
 $candidates = @(
-    (Join-Path $repositoryRoot ".venv\Scripts\python.exe"),
-    (Join-Path $moduleRoot "Train\.venv\Scripts\python.exe")
+    (Join-Path $repositoryRoot ".venv\Scripts\python.exe")
 )
 # Thêm Python cài trên máy làm phương án dự phòng
 $candidates += @(Get-Command python.exe -All -ErrorAction SilentlyContinue |

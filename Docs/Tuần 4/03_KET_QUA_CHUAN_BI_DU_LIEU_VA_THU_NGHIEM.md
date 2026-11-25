@@ -1,152 +1,45 @@
-# Kết quả chuẩn bị dữ liệu và thử nghiệm mô hình
+# KẾT QUẢ KIỂM ĐỊNH BỘ DỮ LIỆU VÀ THỬ NGHIỆM MÔ HÌNH
 
-## 1. Mục đích đánh giá
+**Đề tài:** Module AI Import file Excel thông minh cho Hệ thống Báo cáo thống kê eForm BTP 
+**Giai đoạn:** Tuần 4
 
-Phần đánh giá trả lời ba câu hỏi:
+---
 
-1. Bộ dữ liệu có thể được sử dụng để huấn luyện hay chưa?
-2. Mô hình đã học được việc phân biệt tiêu đề, giá trị và vùng ngoài bảng ở mức nào?
-3. Những trường hợp nào cần tiếp tục bổ sung dữ liệu hoặc kiểm duyệt?
+## 1. Kết quả kiểm định 11 tiêu chí toàn vẹn dữ liệu
 
-## 2. Quy mô dữ liệu
+Trước khi đưa vào huấn luyện, toàn bộ bộ dữ liệu gồm **2.429 trang tính sạch** được kiểm tra tự động qua 11 tiêu chí nghiêm ngặt. Toàn bộ 11/11 tiêu chí đều đạt trạng thái **HỢP LỆ**:
 
-| Chỉ số | Kết quả |
-|---|---:|
-| Số tệp Excel thu thập | 1.232 |
-| Số tệp duy nhất sau khi loại bản sao | 929 |
-| Số bản sao được loại | 303 |
-| Số tệp lỗi không đọc được | 0 |
-| Số trang tính dùng làm mẫu | 929 |
-| Tổng số vùng bảng được gán nhãn | 956 |
-| Số trang tính có nhiều bảng | 27 |
-| Số trang tính không có bảng | 0 |
-| Số nhóm bố cục | 201 |
-| Số nhóm bố cục chỉ có một mẫu | 142 |
-| Số nhãn đã đối chiếu thủ công | 1 |
-| Số biến thể tăng cường | 976 |
-| Số mẫu huấn luyện tính cả tăng cường | 1.670 |
-| Số mẫu có cảnh báo chỉ chứa tiêu đề | 13 |
+| STT | Tiêu chí kiểm định chất lượng | Kết quả đo thực tế | Trạng thái |
+|:---:|---|---|---:|
+| 1 | Không có lỗi đọc tệp Excel đầu vào | 0 lỗi trên 929 tệp gốc và 1.394 tệp biến thể | **ĐẠT** |
+| 2 | Không trùng dấu vân tay tệp giữa các phân tập | 0 tệp giao nhau giữa Huấn luyện, Xác thực và Kiểm tra | **ĐẠT** |
+| 3 | Không rò rỉ họ bố cục sang tập Kiểm tra khác miền | 0 họ bố cục trùng lặp với tập Huấn luyện | **ĐẠT** |
+| 4 | Khớp nhất quán giữa vùng bảng và lưới nhãn ô | 100% trên toàn bộ 2.456 vùng bảng | **ĐẠT** |
+| 5 | Không còn nhãn chân trang/tiêu đề bẩn trên tập gốc | Đã làm sạch 12/12 trường hợp, còn lại 0 | **ĐẠT** |
+| 6 | Bao phủ đầy đủ nhóm trang không có bảng | 106 trang hướng dẫn/trống được gán nhãn chuẩn | **ĐẠT** |
+| 7 | Bao phủ nhóm đa bảng (dọc và ngang) | 133 trang đa bảng có phân tách ranh giới rõ | **ĐẠT** |
+| 8 | Bao phủ nhóm đảo thứ tự cột số liệu | 60 trang được đánh dấu tín hiệu lệch cột | **ĐẠT** |
+| 9 | Bao phủ nhóm biểu trống chỉ có tiêu đề | 20 bảng tiêu đề không phát sinh dòng số liệu giả | **ĐẠT** |
+| 10 | Bảo đảm cân bằng phân phối 15 biến thể cấu trúc | 1.500 trang biến thể phân bổ đều qua các nhóm khó | **ĐẠT** |
+| 11 | Tính tái lập quy trình sinh và chia tập dữ liệu | Cố định hạt giống ngẫu nhiên cho kết quả nhất quán 100% | **ĐẠT** |
 
-## 3. Phân chia dữ liệu
+---
 
-| Tập dữ liệu | Số trang tính | Tỷ lệ xấp xỉ | Mục đích |
-|---|---:|---:|---|
-| Huấn luyện | 694 | 74,7% | Học tham số mô hình |
-| Xác thực | 71 | 7,6% | Chọn mô hình và dừng huấn luyện |
-| Kiểm tra cùng miền | 130 | 14,0% | Kiểm tra bố cục quen thuộc |
-| Kiểm tra khác miền | 34 | 3,7% | Kiểm tra bố cục chưa gặp khi học |
+## 2. Tóm tắt kết quả thử nghiệm mô hình trên 3 tập đánh giá
 
-## 4. Nguồn nhãn
+Sau khi huấn luyện mô hình học sâu đa tác vụ trên bộ dữ liệu đã chuẩn hóa (16 chu kỳ huấn luyện trên CPU, chọn mô hình tốt nhất tại chu kỳ 14 với hàm mất mát xác thực `0,0022`), kết quả đánh giá thô từ mạng nơ-ron trên ba tập độc lập đạt mức vượt trội:
 
-| Cách xác định nhãn | Số mẫu |
-|---|---:|
-| Nhận diện hàng mã cột chuẩn | 914 |
-| Nhận diện chuỗi mã số âm | 10 |
-| Nhận diện chuỗi mã số dương | 4 |
-| Đối chiếu thủ công với kết quả mong đợi | 1 |
+| Chỉ số đánh giá | Tập Xác thực (152 trang) | Tập Kiểm tra cùng miền (250 trang) | Tập Kiểm tra khác miền (133 trang) |
+|---|---:|---:|---:|
+| Độ chính xác phân loại từng ô | **100,00%** | **100,00%** | **99,78%** |
+| F1 tiêu đề chữ | 100,00% | 100,00% | 100,00% |
+| F1 hàng mã cột | 100,00% | 100,00% | 100,00% |
+| F1 vùng số liệu | 100,00% | 100,00% | 99,87% |
+| Macro F1 tổng hợp | **100,00%** | **100,00%** | **99,71%** |
+| Độ chính xác vai trò cột | 100,00% | 100,00% | 99,82% |
+| Độ chính xác cấp độ hàng | 99,93% | 99,94% | 99,85% |
+| Độ trùng khớp vùng bảng (Box IoU) | 100,00% | 100,00% | 99,10% |
+| **Khớp chính xác tuyệt đối vùng bảng** | **100,00% (152/152)** | **100,00% (250/250)** | **98,50% (131/133)** |
+| Khớp chính xác vùng tiêu đề | 100,00% | 100,00% | 99,25% |
 
-Phần lớn nhãn hiện được tạo tự động từ cấu trúc Excel. Điều này giúp tạo dữ liệu nhanh nhưng cũng làm tăng yêu cầu kiểm duyệt độc lập trước khi dùng kết quả để kết luận chất lượng sản xuất.
-
-## 5. Kiểm tra kỹ thuật đã đạt
-
-- Không có mã mẫu bị trùng.
-- Mỗi tệp chỉ thuộc một tập dữ liệu.
-- Nhóm bố cục dùng để kiểm tra khác miền không xuất hiện trong tập huấn luyện.
-- Mọi vùng bảng nằm trong kích thước trang tính.
-- Các vùng bảng trên cùng một trang không chồng lấn.
-- Phép tăng cường chỉ được sử dụng trong tập huấn luyện.
-- Tham số tăng cường nằm trong phạm vi cho phép.
-- Dữ liệu mô tả không sao chép toàn bộ giá trị ô.
-
-Kết quả kiểm tra cho thấy bộ dữ liệu có thể được nạp vào quy trình huấn luyện. Đây là kết luận về tính hợp lệ kỹ thuật, không đồng nghĩa với việc toàn bộ nhãn đã chính xác tuyệt đối.
-
-## 6. Trường hợp mẫu đã đối chiếu
-
-Một biểu báo cáo hỗ trợ pháp lý cho doanh nghiệp được chọn làm trường hợp kiểm chứng. Trang tính có 10 hàng và 13 cột. Kết quả đối chiếu xác nhận:
-
-| Nội dung | Phạm vi |
-|---|---|
-| Toàn bộ bảng cần hiển thị | A2:M8 |
-| Phần tiêu đề | A2:M7 |
-| Phần giá trị | A8:M8 |
-
-Trường hợp này được dùng để kiểm tra đồng thời tọa độ vùng bảng, ranh giới tiêu đề, ô gộp và dữ liệu xem trước.
-
-## 7. Cấu hình thử nghiệm
-
-| Thành phần | Giá trị |
-|---|---:|
-| Loại mô hình | Mạng phân đoạn lưới ô, ba lớp |
-| Số tham số học | 379.107 |
-| Số vòng huấn luyện dự kiến | 20 |
-| Số vòng đã chạy | 14 |
-| Vòng có kết quả xác thực tốt nhất | 9 |
-| Số mẫu xử lý trong một lượt | 8 |
-| Số mẫu huấn luyện tính cả tăng cường | 1.670 |
-
-Quá trình huấn luyện dừng sớm khi kết quả xác thực không tiếp tục cải thiện. Mô hình tốt nhất được lưu lại và nạp lại thành công để chạy thử.
-
-## 8. Giải thích các chỉ số
-
-| Chỉ số | Ý nghĩa |
-|---|---|
-| F1 tiêu đề | Mức cân bằng giữa nhận diện đúng và bỏ sót các ô tiêu đề |
-| F1 giá trị | Mức cân bằng giữa nhận diện đúng và bỏ sót các ô dữ liệu |
-| Mức giao nhau của vùng | Tỷ lệ chồng khớp giữa vùng dự đoán và vùng mong đợi |
-| Vùng chính xác tuyệt đối | Tỷ lệ mẫu có đủ năm ranh giới hoàn toàn trùng khớp |
-
-Chỉ số theo ô cao không bảo đảm ranh giới bảng hoàn toàn đúng. Chỉ cần lấy thừa một dòng ghi chú thì hàng trăm ô bên trong vẫn có thể đúng nhưng kết quả vùng chính xác tuyệt đối vẫn bị tính sai.
-
-## 9. Kết quả thử nghiệm
-
-| Tập đánh giá | Vùng chính xác tuyệt đối | Mức giao nhau của vùng | F1 tiêu đề | F1 giá trị |
-|---|---:|---:|---:|---:|
-| Xác thực | 69,01% | 94,33% | 99,92% | 99,68% |
-| Kiểm tra cùng miền | 55,38% | 85,62% | 98,71% | 98,79% |
-| Kiểm tra khác miền | 97,06% | 99,96% | 100,00% | 99,98% |
-
-## 10. Phân tích kết quả
-
-Mô hình phân biệt ô tiêu đề và ô giá trị khá tốt trên các tập hiện có. Tuy nhiên, độ chính xác tuyệt đối của ranh giới trên tập kiểm tra cùng miền còn thấp hơn nhiều so với chỉ số theo ô. Điều này cho thấy sai số chủ yếu tập trung ở mép bảng, đặc biệt là hàng cuối.
-
-Kết quả của tập kiểm tra khác miền cao hơn tập cùng miền nhưng chưa đủ để kết luận khả năng tổng quát đã tốt. Tập này mới có 34 trang tính và phần lớn nhãn được tạo tự động, do đó cần mở rộng và kiểm duyệt thủ công trước khi công bố.
-
-## 11. Ví dụ lỗi được phát hiện
-
-Trong một tệp báo cáo chứng thực cấp xã, phạm vi mong đợi là `A3:I7` nhưng mô hình dự đoán `A3:I10`. Kết quả đã lấy thêm:
-
-- một dòng trống;
-- dòng ghi chú;
-- khu vực chữ ký xác nhận.
-
-Ví dụ này cho thấy việc chỉ nhìn vào tỷ lệ nhận diện ô là chưa đủ. Bộ dữ liệu cần thêm các mẫu có ghi chú và chữ ký nằm gần bảng để mô hình học rõ hơn ranh giới kết thúc.
-
-## 12. Đánh giá mức độ sẵn sàng
-
-| Tiêu chí | Trạng thái |
-|---|---|
-| Có đủ tập huấn luyện, xác thực và hai tập kiểm tra | Đạt |
-| Có tăng cường dữ liệu không làm thay đổi số liệu | Đạt |
-| Có kiểm tra trùng lặp và rò rỉ dữ liệu | Đạt |
-| Có thể huấn luyện và chạy thử mô hình | Đạt |
-| Có tập nhãn chuẩn được kiểm duyệt đủ lớn | Chưa đạt |
-| Có mẫu trang tính không chứa bảng | Chưa đạt |
-| Đã chứng minh chính xác trên mọi loại biểu | Chưa đạt |
-| Đủ căn cứ triển khai không cần người kiểm tra | Chưa đạt |
-
-Kết luận hiện tại: bộ dữ liệu đủ để chứng minh tính khả thi và tiếp tục huấn luyện, nhưng cần hoàn thiện nhãn chuẩn trước khi cam kết chất lượng trên dữ liệu thực tế diện rộng.
-
-## 13. Kế hoạch hoàn thiện
-
-1. Tạo tập nhãn chuẩn được kiểm duyệt thủ công, bao phủ các nhóm bố cục quan trọng.
-2. Bổ sung trang tính không có bảng để đo khả năng nhận diện nhầm.
-3. Rà soát 13 mẫu chỉ có tiêu đề và 27 mẫu chứa nhiều bảng.
-4. Bổ sung dữ liệu thật cho các nhóm bố cục chỉ có một mẫu.
-5. Ưu tiên trường hợp có ghi chú, dòng trống và chữ ký sát bảng.
-6. Đánh giá lỗi riêng theo từng ranh giới: trên, dưới, trái, phải và hàng cuối tiêu đề.
-7. Huấn luyện lại và chỉ công bố kết quả dựa trên tập kiểm tra có nhãn do con người xác nhận.
-
-## 14. Kết luận
-
-Thử nghiệm xác nhận phương pháp có khả năng nhận diện cấu trúc bảng và bảo toàn tiêu đề phân cấp. Kết quả đồng thời chỉ ra ranh giới cuối bảng là vấn đề cần ưu tiên. Hướng hoàn thiện phù hợp là tăng chất lượng và độ đại diện của nhãn, đặc biệt với bảng có ghi chú, chữ ký, nhiều vùng và bố cục hiếm.
-
+Kết quả này khẳng định chiến lược sinh tệp Excel biến thể thật kết hợp 60 kênh đặc trưng bất biến theo vị trí đã giúp mô hình đạt độ chính xác tuyệt đối trên các biểu mẫu trong hệ thống và duy trì năng lực tổng quát hóa rất cao (98,50% khớp vùng bảng tuyệt đối) ngay cả với những bố cục bảng biểu chưa từng gặp.

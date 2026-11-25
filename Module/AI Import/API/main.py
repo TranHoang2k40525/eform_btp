@@ -16,22 +16,27 @@ from openpyxl.utils.exceptions import InvalidFileException
 from pydantic import BaseModel, ConfigDict, Field
 
 
-MODULE_ROOT = Path(__file__).resolve().parents[1]
-TRAIN_ROOT = MODULE_ROOT / "Train"
-if str(TRAIN_ROOT) not in sys.path:
-    sys.path.insert(0, str(TRAIN_ROOT))
+API_ROOT = Path(__file__).resolve().parent
+MODULE_ROOT = API_ROOT.parent
+if str(MODULE_ROOT) not in sys.path:
+    sys.path.insert(0, str(MODULE_ROOT))
 
-from training_core import EFormPredictor, MODEL_FILENAME  # noqa: E402
+# FastAPI imports ONLY the lightweight runtime package — zero dependency on Train/
+from eform_ai import EFormPredictor, MODEL_FILENAME  # noqa: E402
 
 
-SERVICE_VERSION = "1.0.0"
-DEFAULT_MODEL_PATH = TRAIN_ROOT / "Output_Local" / MODEL_FILENAME
+SERVICE_VERSION = "2.0.0"
+DEFAULT_MODEL_CANDIDATES = (
+    API_ROOT / "models" / MODEL_FILENAME,
+    MODULE_ROOT / "Train" / "Output_Local" / MODEL_FILENAME,
+)
 ALLOWED_EXTENSIONS = {".xlsx", ".xlsm"}
 MAX_UPLOAD_BYTES = int(os.getenv("EFORM_MAX_UPLOAD_BYTES", str(50 * 1024 * 1024)))
 MAX_UNCOMPRESSED_BYTES = int(
     os.getenv("EFORM_MAX_UNCOMPRESSED_BYTES", str(500 * 1024 * 1024))
 )
 REVIEW_THRESHOLD = float(os.getenv("EFORM_REVIEW_THRESHOLD", "0.75"))
+MAX_CONCURRENT_REQUESTS = max(1, int(os.getenv("EFORM_MAX_CONCURRENT", "4")))
 
 
 class ContractModel(BaseModel):
@@ -151,7 +156,12 @@ class ErrorResponse(ContractModel):
 
 def _model_path() -> Path:
     configured = os.getenv("EFORM_MODEL_PATH", "").strip()
-    return Path(configured).expanduser().resolve() if configured else DEFAULT_MODEL_PATH.resolve()
+    if configured:
+        return Path(configured).expanduser().resolve()
+    for candidate in DEFAULT_MODEL_CANDIDATES:
+        if candidate.is_file():
+            return candidate.resolve()
+    return DEFAULT_MODEL_CANDIDATES[0].resolve()
 
 
 def _validate_ooxml(path: Path) -> None:
@@ -190,7 +200,8 @@ async def lifespan(app: FastAPI):
         os.getenv("EFORM_DEVICE", "auto"),
     )
     app.state.predictor = predictor
-    app.state.inference_lock = asyncio.Lock()
+    concurrency = 1 if predictor.device.type == "cuda" else MAX_CONCURRENT_REQUESTS
+    app.state.inference_semaphore = asyncio.Semaphore(concurrency)
     yield
 
 
@@ -245,7 +256,7 @@ async def extract(
             try:
                 await run_in_threadpool(_validate_ooxml, workbook_path)
                 predictor: EFormPredictor = app.state.predictor
-                async with app.state.inference_lock:
+                async with app.state.inference_semaphore:
                     result = await run_in_threadpool(
                         predictor.predict,
                         workbook_path,

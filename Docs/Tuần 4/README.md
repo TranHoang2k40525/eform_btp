@@ -1,34 +1,15 @@
-# Danh mục tài liệu Tuần 4
+# TÀI LIỆU NGHIÊN CỨU TUẦN 4 – XÂY DỰNG VÀ CHUẨN HÓA BỘ DỮ LIỆU HUẤN LUYỆN AI
 
-## Chủ đề
+Thư mục này tổng hợp kết quả chuẩn bị, làm sạch, gán nhãn và làm giàu bộ dữ liệu phục vụ bài toán nhận diện cấu trúc bảng biểu Excel bằng học sâu cho Hệ thống Báo cáo điện tử eForm BTP.
 
-**Chuẩn bị dữ liệu mẫu và thiết kế bộ câu lệnh để mô hình nhận diện cấu trúc phân cấp của bảng thống kê trong Excel.**
+## Danh mục tài liệu trong thư mục
 
-Bộ tài liệu trình bày một giải pháp hỗ trợ đọc các tệp Excel báo cáo có bố cục khác nhau. Hệ thống xác định bảng cần lấy, phân biệt vùng tiêu đề và vùng số liệu, bảo toàn quan hệ tiêu đề cha – con, sau đó trả dữ liệu xem trước để người dùng kiểm tra trước khi nhập.
+1. **[01_BAO_CAO_XAY_DUNG_BO_DU_LIEU.md](01_BAO_CAO_XAY_DUNG_BO_DU_LIEU.md):** Báo cáo quy trình thu thập 1.232 tệp Excel thật, lọc trùng lặp, sinh 1.394 tệp biến thể cấu trúc thực tế, gán nhãn đa tác vụ và phân chia 4 tập dữ liệu chống rò rỉ (tổng cộng 2.429 trang tính sạch).
+2. **[02_CAU_TRUC_DU_LIEU_VA_BO_PROMPT_MAU.md](02_CAU_TRUC_DU_LIEU_VA_BO_PROMPT_MAU.md):** Đặc tả kiến trúc biểu diễn bảng tính theo lưới đặc trưng 60 kênh, cấu trúc nhãn đa tác vụ (4 lớp ô, 5 vai trò cột, 9 cấp độ hàng) và chuẩn đầu ra JSON phân cấp.
+3. **[03_KET_QUA_CHUAN_BI_DU_LIEU_VA_THU_NGHIEM.md](03_KET_QUA_CHUAN_BI_DU_LIEU_VA_THU_NGHIEM.md):** Bảng tổng hợp 11 tiêu chí kiểm định chất lượng dữ liệu, thống kê phân bố 4 phân tập và kết quả kiểm chứng mô hình trên các tập dữ liệu độc lập.
 
-## Đối tượng sử dụng
+## Sơ đồ trực quan
 
-- Người quản lý và cán bộ nghiệp vụ cần hiểu mục tiêu, lợi ích và kết quả của giải pháp.
-- Thành viên dự án cần thống nhất cách chuẩn bị, gán nhãn và kiểm tra bộ dữ liệu.
-- Người đánh giá cần có số liệu, sơ đồ và kết quả thử nghiệm làm minh chứng.
-
-## Thành phần tài liệu
-
-| Tài liệu | Nội dung |
-|---|---|
-| `01_BAO_CAO_XAY_DUNG_BO_DU_LIEU.md` | Bài toán, phạm vi, phương pháp chuẩn bị dữ liệu và kết quả mong đợi |
-| `02_CAU_TRUC_DU_LIEU_VA_BO_PROMPT_MAU.md` | Cấu trúc mẫu huấn luyện, quy tắc gán nhãn và bộ câu lệnh mẫu |
-| `03_KET_QUA_CHUAN_BI_DU_LIEU_VA_THU_NGHIEM.md` | Thống kê bộ dữ liệu, kết quả thử nghiệm, hạn chế và kế hoạch hoàn thiện |
-| `BAO_CAO_TUAN_4_CHUAN_BI_BO_DU_LIEU_AI.docx` | Báo cáo Word tổng hợp để trình bày và lưu minh chứng |
-| `diagrams/` | Ba sơ đồ draw.io có thể chỉnh sửa và ảnh PNG để xem nhanh |
-
-## Ba nội dung cốt lõi
-
-1. Mô hình học cách xác định vị trí bảng và phân loại ô thành ba nhóm: ngoài bảng, tiêu đề và giá trị.
-2. Nội dung trong Excel được đọc trực tiếp sau khi đã xác định vùng; mô hình không tự tạo lại số liệu.
-3. Quan hệ tiêu đề phân cấp được biểu diễn thành đường dẫn từ tiêu đề cha đến tiêu đề con cho từng cột, tạo cơ sở cho việc hiển thị và ánh xạ nghiệp vụ ở bước tiếp theo.
-
-## Phạm vi
-
-Bộ tài liệu tập trung vào dữ liệu huấn luyện, quy tắc gán nhãn, bộ câu lệnh mẫu và kết quả thử nghiệm. Việc đối chiếu với biểu đích, kiểm tra nghiệp vụ và ghi dữ liệu chính thức được thực hiện sau bước xem trước nên không thuộc phạm vi báo cáo này.
-
+- `diagrams/01_QUY_TRINH_NHAN_DIEN_VA_TRICH_XUAT.png` – Quy trình nhận diện cấu trúc và trích xuất bảng biểu từ tệp Excel.
+- `diagrams/02_QUY_TRINH_XAY_DUNG_BO_DU_LIEU.png` – Quy trình xây dựng, làm giàu bằng tệp biến thể và kiểm định 11 tiêu chí chất lượng dữ liệu.
+- `diagrams/03_BIEU_DIEN_TIEU_DE_PHAN_CAP.png` – Cấu trúc biểu diễn tiêu đề nhiều tầng và ánh xạ chỉ tiêu cha–con.

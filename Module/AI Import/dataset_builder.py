@@ -9,7 +9,7 @@ import tempfile
 import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-from datetime import date, datetime, time, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -18,11 +18,14 @@ from openpyxl.cell.cell import MergedCell
 from openpyxl.utils.cell import range_boundaries
 
 
-SCHEMA_VERSION = "excel-table-regions-1.0"
+SCHEMA_VERSION = "excel-table-regions-2.0"
 SUPPORTED_SUFFIXES = {".xlsx", ".xlsm"}
 STANDARD_CODE_RE = re.compile(r"^(?:\(\s*\d+\s*\)|[A-Z]{1,3})$")
 PAREN_CODE_RE = re.compile(r"^\(\s*\d+\s*\)$")
 NUMBER_IN_TEXT_RE = re.compile(r"\d+(?:[.,]\d+)*")
+NUMERIC_TEXT_RE = re.compile(
+    r"^[-+]?(?:\d{1,3}(?:[.,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)%?$"
+)
 
 FOOTER_TERMS = (
     "nguoi lap bieu",
@@ -30,20 +33,36 @@ FOOTER_TERMS = (
     "thu truong",
     "giam doc",
     "ky, ghi ro",
+    "ky, dong dau",
+    "khong phai bao cao",
+)
+FOOTER_LINE_RE = re.compile(
+    r"\b(ghi chu|chu thich|nguoi lap bieu|nguoi kiem tra|ky,|dong dau|thu truong|giam doc|"
+    r"khong phai bao cao|luu y)\b"
+    r"|^[\*\-•]\s*(cot|so lieu|theo |o co dau|tu cot|chi tieu|bao cao|ghi chu)"
+    r"|^o co dau|^tu cot \(?\d|^cot \(?\d"
 )
 METADATA_TERMS = (
     "bieu so",
+    "ban hanh theo",
     "don vi bao cao",
     "don vi nhan bao cao",
     "don vi tinh",
     "ngay nhan bao cao",
+    "co so bo nam",
 )
+METADATA_LINE_RE = re.compile(
+    r"\b(bieu so|ban hanh theo|ngay nhan bao cao|co so bo nam|don vi bao cao|"
+    r"don vi nhan bao cao|don vi tinh|(?<!trong )ky bao cao|tu ngay|den ngay)\b"
+)
+SECTION_TITLE_RE = re.compile(r"^[ivxlcdm]+\.\s+\S", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
 class BuildOptions:
     module_root: Path
     augment: bool = True
+    include_raw_variants: bool = True
     minimum_family_samples: int = 12
     maximum_augmentations_per_sheet: int = 5
     include_hidden_sheets: bool = True
@@ -129,6 +148,30 @@ def _int_value(value: Any) -> int | None:
     return None
 
 
+def _is_numeric_text(text: str) -> bool:
+    return bool(text) and bool(NUMERIC_TEXT_RE.fullmatch(text))
+
+
+def _row_border_count(worksheet: Any, row: int, left: int, right: int) -> int:
+    bordered = 0
+    for col in range(left, right + 1):
+        border = worksheet.cell(row, col).border
+        if border and any(
+            getattr(getattr(border, side, None), "style", None)
+            for side in ("left", "right", "top", "bottom")
+        ):
+            bordered += 1
+    return bordered
+
+
+def _row_has_vertical_merge(worksheet: Any, row: int, left: int, right: int) -> bool:
+    for merged_range in worksheet.merged_cells.ranges:
+        ml, mt, mr, mb = range_boundaries(str(merged_range))
+        if mt == row and mb > row and ml >= left and mr <= right and (mr - ml) <= 2:
+            return True
+    return False
+
+
 def _row_summary(worksheet: Any, row: int, column_count: int) -> dict[str, Any]:
     non_empty: list[tuple[int, Any]] = []
     text_count = 0
@@ -143,7 +186,10 @@ def _row_summary(worksheet: Any, row: int, column_count: int) -> dict[str, Any]:
             continue
         non_empty.append((column, value))
         if isinstance(value, str) and not value.startswith("="):
-            text_count += 1
+            if _is_numeric_text(clean_text(value)):
+                numeric_count += 1
+            else:
+                text_count += 1
         elif isinstance(value, (int, float)) and not isinstance(value, bool):
             numeric_count += 1
         bold_count += int(bool(getattr(cell.font, "bold", False)))
@@ -175,16 +221,24 @@ def _is_blank(summary: dict[str, Any]) -> bool:
 def _is_footer(summary: dict[str, Any]) -> bool:
     joined = summary["joined"]
     first = summary["folded_texts"][0].lstrip("* ") if summary["folded_texts"] else ""
-    # "Ghi chú" is often a legitimate last header column.  It is a footer only
-    # when it starts a sparse row below the data table.
     if summary["count"] <= 2 and first.startswith(("ghi chu", "chu thich")):
         return True
-    return any(term in joined for term in FOOTER_TERMS)
+    if any(term in joined for term in FOOTER_TERMS):
+        return True
+    # Catch unbordered bullet/column footnotes like "- Cột (1)...", "Từ cột (1)...", "Ô có dấu '-'"
+    if summary["numeric_ratio"] == 0 and summary["count"] <= 3 and summary["border_density"] == 0:
+        if FOOTER_LINE_RE.search(joined):
+            return True
+    return False
 
 
 def _is_metadata_or_title(summary: dict[str, Any]) -> bool:
     joined = summary["joined"]
     if any(term in joined for term in METADATA_TERMS):
+        return True
+    if METADATA_LINE_RE.search(joined):
+        return True
+    if summary["count"] <= 2 and summary["border_density"] == 0 and SECTION_TITLE_RE.match(joined):
         return True
     return (
         summary["count"] <= 3
@@ -194,11 +248,6 @@ def _is_metadata_or_title(summary: dict[str, Any]) -> bool:
 
 
 def _numeric_sequence_columns(summary: dict[str, Any]) -> tuple[list[int], str] | None:
-    """Recognize code rows such as -1..-13 and A,B,1..24.
-
-    Alignment is checked against the physical column, so a deliberately blank
-    code cell does not make a valid sequence fail (for example -6, blank, -8).
-    """
     items = summary["non_empty"]
     numeric = [(column, _int_value(value)) for column, value in items if _int_value(value) is not None]
     textual = [
@@ -297,6 +346,95 @@ def _data_bottom(
     return last
 
 
+def clean_table_box(worksheet: Any, table: dict[str, int]) -> tuple[dict[str, int], dict[str, int]]:
+    """Strip dirty unbordered footnotes, trailing blanks, leading metadata/section titles,
+    and completely empty outer columns so ground-truth labels in dataset.jsonl are 100% clean."""
+    top = int(table["top"])
+    left = int(table["left"])
+    bottom = int(table["bottom"])
+    right = int(table["right"])
+    header_bottom = max(top, min(bottom, int(table["header_bottom"])))
+    orig = (top, left, bottom, right, header_bottom)
+    width = max(1, right - left + 1)
+
+    def row_stats(row: int) -> tuple[int, int, int, str]:
+        vals = [_cell_value(worksheet, row, col) for col in range(left, right + 1)]
+        texts = [clean_text(v) for v in vals]
+        nonempty = sum(bool(t) for t in texts)
+        numeric = sum(
+            (isinstance(v, (int, float)) and not isinstance(v, bool)) or _is_numeric_text(t)
+            for v, t in zip(vals, texts)
+        )
+        bordered = _row_border_count(worksheet, row, left, right)
+        folded = fold_text(" ".join(t for t in texts if t))
+        return nonempty, numeric, bordered, folded
+
+    # 1. Trim leading unbordered metadata / standalone section title
+    while top < header_bottom:
+        nonempty, numeric, bordered, folded = row_stats(top)
+        weak_grid = bordered < math.ceil(width * 0.35)
+        is_meta = bool(METADATA_LINE_RE.search(folded))
+        is_sec_title = nonempty <= 2 and bool(SECTION_TITLE_RE.match(folded))
+        if numeric == 0 and weak_grid and (is_meta or is_sec_title or nonempty == 0):
+            if not is_meta and _row_has_vertical_merge(worksheet, top, left, right):
+                break
+            top += 1
+            continue
+        break
+
+    # 2. Trim trailing dirty footer notes & trailing blank rows (keep 1 row for empty template forms)
+    while bottom > header_bottom:
+        nonempty, numeric, bordered, folded = row_stats(bottom)
+        weak_grid = bordered < math.ceil(width * 0.35)
+        sparse = nonempty <= max(1, math.ceil(width * 0.25))
+        is_footer_note = bool(FOOTER_LINE_RE.search(folded))
+        is_blank = nonempty == 0 and numeric == 0 and bottom - 1 > header_bottom
+        unbordered_note = numeric == 0 and bordered == 0 and nonempty <= 3
+        note_in_grid = numeric == 0 and is_footer_note and nonempty <= 2
+        if is_blank or unbordered_note or note_in_grid or (numeric == 0 and weak_grid and (sparse or is_footer_note)):
+            bottom -= 1
+            continue
+        break
+
+    # 3. Trim completely empty outer columns
+    merge_boxes = [range_boundaries(str(mr)) for mr in worksheet.merged_cells.ranges]
+
+    def col_empty(col: int) -> bool:
+        for ml, mt, mr, mb in merge_boxes:
+            if ml <= col <= mr and mt <= bottom and mb >= top:
+                return False
+        for row in range(top, bottom + 1):
+            if clean_text(_cell_value(worksheet, row, col)):
+                return False
+            border = worksheet.cell(row, col).border
+            if border and any(
+                getattr(getattr(border, side, None), "style", None)
+                for side in ("left", "right", "top", "bottom")
+            ):
+                return False
+        return True
+
+    while right > left and col_empty(left):
+        left += 1
+    while right > left and col_empty(right):
+        right -= 1
+
+    header_bottom = max(top, min(bottom, header_bottom))
+    cleaned = {
+        "top": top,
+        "left": left,
+        "bottom": bottom,
+        "right": right,
+        "header_bottom": header_bottom,
+    }
+    stats = {
+        "top_trimmed": max(0, top - orig[0]),
+        "bottom_trimmed": max(0, orig[2] - bottom),
+        "cols_trimmed": max(0, left - orig[1]) + max(0, orig[3] - right),
+    }
+    return cleaned, stats
+
+
 def _fallback_table(
     summaries: dict[int, dict[str, Any]], row_count: int, column_count: int
 ) -> dict[str, Any] | None:
@@ -315,9 +453,7 @@ def _fallback_table(
     if data_start is None:
         return None
     header_bottom = data_start - 1
-    top = _header_top(summaries, data_start)
-    # _header_top treats data_start like a code row; never include the data row itself.
-    top = min(top, header_bottom)
+    top = min(_header_top(summaries, data_start), header_bottom)
     left = min(
         (column for row in range(top, data_start + 1) for column, _ in summaries[row]["non_empty"]),
         default=1,
@@ -343,9 +479,12 @@ def _fallback_table(
     }
 
 
-def detect_tables(worksheet: Any, row_count: int, column_count: int) -> tuple[list[dict[str, int]], str, float, list[str]]:
+def detect_tables(
+    worksheet: Any, row_count: int, column_count: int
+) -> tuple[list[dict[str, int]], str, float, list[str], dict[str, int]]:
+    clean_totals = {"top_trimmed": 0, "bottom_trimmed": 0, "cols_trimmed": 0}
     if row_count == 0 or column_count == 0:
-        return [], "empty_sheet", 1.0, []
+        return [], "empty_sheet", 1.0, [], clean_totals
     summaries = {row: _row_summary(worksheet, row, column_count) for row in range(1, row_count + 1)}
     candidates: list[tuple[int, list[int], str, float]] = []
     for row, summary in summaries.items():
@@ -362,27 +501,36 @@ def detect_tables(worksheet: Any, row_count: int, column_count: int) -> tuple[li
         left, right = min(columns), max(columns)
         next_top = tops[index + 1] if index + 1 < len(tops) else None
         bottom = _data_bottom(summaries, code_row, row_count, left, right, next_top)
-        if bottom == code_row:
-            warnings.append("HEADER_ONLY_TABLE")
-            confidence = min(confidence, 0.82)
-        tables.append({
+        raw_box = {
             "top": top,
             "left": left,
             "bottom": bottom,
             "right": right,
             "header_bottom": code_row,
-        })
+        }
+        cleaned_box, stats = clean_table_box(worksheet, raw_box)
+        for k in clean_totals:
+            clean_totals[k] += int(stats[k] > 0)
+        if cleaned_box["bottom"] == cleaned_box["header_bottom"]:
+            warnings.append("HEADER_ONLY_TABLE")
+            confidence = min(confidence, 0.82)
+        tables.append(cleaned_box)
         methods.append(method)
         confidences.append(confidence)
     if not tables:
         fallback = _fallback_table(summaries, row_count, column_count)
         if fallback:
-            tables.append({key: fallback[key] for key in ("top", "left", "bottom", "right", "header_bottom")})
+            cleaned_box, stats = clean_table_box(
+                worksheet, {key: fallback[key] for key in ("top", "left", "bottom", "right", "header_bottom")}
+            )
+            for k in clean_totals:
+                clean_totals[k] += int(stats[k] > 0)
+            tables.append(cleaned_box)
             methods.append(str(fallback["method"]))
             confidences.append(float(fallback["confidence"]))
             warnings.append("FALLBACK_BOUNDARY")
     method = "+".join(sorted(set(methods))) if methods else "no_table"
-    return tables, method, min(confidences, default=0.70), sorted(set(warnings))
+    return tables, method, min(confidences, default=0.70), sorted(set(warnings)), clean_totals
 
 
 def _header_signature(worksheet: Any, tables: list[dict[str, int]]) -> list[list[Any]]:
@@ -412,6 +560,7 @@ def _analyse_workbook(path: Path, options: BuildOptions) -> dict[str, Any]:
     workbook = load_workbook(path, read_only=False, data_only=False, keep_links=False)
     sheets: list[dict[str, Any]] = []
     signature_sheets: list[dict[str, Any]] = []
+    clean_totals = {"top_trimmed": 0, "bottom_trimmed": 0, "cols_trimmed": 0}
     try:
         for sheet_index, worksheet in enumerate(workbook.worksheets):
             if worksheet.sheet_state != "visible" and not options.include_hidden_sheets:
@@ -419,7 +568,9 @@ def _analyse_workbook(path: Path, options: BuildOptions) -> dict[str, Any]:
             row_count, column_count = _actual_bounds(worksheet)
             if row_count > options.max_rows or column_count > options.max_columns or row_count * column_count > options.max_cells:
                 raise ValueError(f"Sheet {worksheet.title!r} vượt giới hạn {row_count}x{column_count}.")
-            tables, method, confidence, warnings = detect_tables(worksheet, row_count, column_count)
+            tables, method, confidence, warnings, c_stats = detect_tables(worksheet, row_count, column_count)
+            for k in clean_totals:
+                clean_totals[k] += c_stats[k]
             merges = sorted(str(item) for item in worksheet.merged_cells.ranges)
             sheets.append({
                 "sheet_index": sheet_index,
@@ -442,7 +593,11 @@ def _analyse_workbook(path: Path, options: BuildOptions) -> dict[str, Any]:
     finally:
         workbook.close()
     signature = {"sheet_count": len(sheets), "sheets": signature_sheets}
-    return {"sheets": sheets, "layout_group": f"layout-{stable_hash(signature, 20)}"}
+    return {
+        "sheets": sheets,
+        "layout_group": f"layout-{stable_hash(signature, 20)}",
+        "clean_totals": clean_totals,
+    }
 
 
 def _validate_tables(record: dict[str, Any]) -> list[str]:
@@ -453,7 +608,7 @@ def _validate_tables(record: dict[str, Any]) -> list[str]:
             1 <= table["top"] <= table["header_bottom"] <= table["bottom"] <= rows
             and 1 <= table["left"] <= table["right"] <= columns
         ):
-            errors.append(f"table {index} vượt sheet hoặc sai thứ tự")
+            errors.append(f"table {index} vượt sheet ({rows}x{columns}) hoặc sai thứ tự: {table}")
     return errors
 
 
@@ -494,7 +649,7 @@ def _attach_augmentations(records: list[dict[str, Any]], options: BuildOptions) 
     family_workbooks: defaultdict[str, set[str]] = defaultdict(set)
     for record in records:
         family_workbooks[record["layout_group"]].add(record["workbook_id"])
-        if record["split"] == "train":
+        if record["split"] == "train" and record.get("variant_type", "original") == "original":
             train_by_family[record["layout_group"]].append(record)
     for record in records:
         record["augmentation_recipes"] = []
@@ -532,12 +687,81 @@ def _apply_curated_labels(records: list[dict[str, Any]], curated_labels: list[di
     return applied
 
 
-def build_dataset(
+def _load_variant_records(
+    module_root: Path,
+    base_records: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    """Load verified physical Excel variant files from Data/Raw_Variants/variants_manifest.jsonl.
+    Every variant strictly inherits its parent workbook's split and layout_group (zero leakage)."""
+    manifest_path = module_root / "Data" / "Raw_Variants" / "variants_manifest.jsonl"
+    if not manifest_path.is_file():
+        return [], []
+
+    parent_by_source = {
+        (r["source_file"], int(r["sheet_index"])): r
+        for r in base_records
+    }
+    variant_records: list[dict[str, Any]] = []
+    errors: list[dict[str, str]] = []
+
+    for line in manifest_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        entry = json.loads(line)
+        source_file = entry["source_file"]
+        full_path = module_root / source_file
+        if not full_path.is_file():
+            errors.append({"source_file": source_file, "error_type": "FileNotFoundError", "error": "Thiếu file biến thể"})
+            continue
+
+        parent_key = (entry["parent_source_file"], int(entry.get("parent_sheet_index", 0)))
+        parent = parent_by_source.get(parent_key)
+        if parent is None:
+            errors.append({"source_file": source_file, "error_type": "MissingParent", "error": f"Không thấy file gốc {parent_key}"})
+            continue
+
+        digest = sha256_file(full_path)
+        workbook_id = f"wb-var-{digest[:24]}"
+        sheet_index = int(entry["sheet_index"])
+        sample_id = f"sheet-{stable_hash([workbook_id, sheet_index, entry['variant_type']], 24)}"
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "sample_id": sample_id,
+            "workbook_id": workbook_id,
+            "source_file": source_file,
+            "source_sha256": digest,
+            "sheet_index": sheet_index,
+            "sheet_name": entry["sheet_name"],
+            "sheet_shape": entry["sheet_shape"],
+            "layout_group": parent["layout_group"],
+            "split": parent["split"],
+            "variant_type": entry["variant_type"],
+            "parent_source_file": entry["parent_source_file"],
+            "tables": entry["tables"],
+            "col_mismatch_cols": entry.get("col_mismatch_cols", []),
+            "annotation": {
+                "method": f"verified_variant_{entry['variant_type']}",
+                "confidence": 1.0,
+                "warnings": [],
+            },
+            "augmentation_recipes": [],
+        }
+        v_errors = _validate_tables(record)
+        if v_errors:
+            errors.append({"source_file": source_file, "error_type": "InvalidTable", "error": "; ".join(v_errors)})
+            continue
+        variant_records.append(record)
+
+    return variant_records, errors
+
+
+def build_base_records(
     options: BuildOptions | Path,
     *,
     curated_labels: list[dict[str, Any]] | None = None,
     progress: bool = True,
-) -> dict[str, Any]:
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Scan Data/Raw, deduplicate by SHA-256, detect & clean table boxes, and assign splits."""
     if isinstance(options, Path):
         options = BuildOptions(options)
     module_root = options.module_root.resolve()
@@ -554,11 +778,12 @@ def build_dataset(
         digest = sha256_file(path)
         digests[path] = digest
         canonical_by_digest.setdefault(digest, path)
-        if progress and (index == 1 or index % 200 == 0 or index == len(files)):
+        if progress and (index == 1 or index % 300 == 0 or index == len(files)):
             print(f"Đã kiểm tra SHA-256: {index}/{len(files)}")
 
     records: list[dict[str, Any]] = []
     parse_errors: list[dict[str, str]] = []
+    clean_totals = {"top_trimmed": 0, "bottom_trimmed": 0, "cols_trimmed": 0}
     canonical_paths = sorted(canonical_by_digest.values())
     for index, path in enumerate(canonical_paths, 1):
         digest = digests[path]
@@ -566,6 +791,8 @@ def build_dataset(
         workbook_id = f"wb-{digest[:24]}"
         try:
             analysis = _analyse_workbook(path, options)
+            for k in clean_totals:
+                clean_totals[k] += analysis["clean_totals"][k]
             for sheet in analysis["sheets"]:
                 sample_id = f"sheet-{stable_hash([workbook_id, sheet['sheet_index']], 24)}"
                 record = {
@@ -578,7 +805,9 @@ def build_dataset(
                     "sheet_name": sheet["sheet_name"],
                     "sheet_shape": sheet["sheet_shape"],
                     "layout_group": analysis["layout_group"],
+                    "variant_type": "original",
                     "tables": sheet["tables"],
+                    "col_mismatch_cols": [],
                     "annotation": sheet["annotation"],
                 }
                 errors = _validate_tables(record)
@@ -587,11 +816,44 @@ def build_dataset(
                 records.append(record)
         except Exception as exc:
             parse_errors.append({"source_file": source_file, "error_type": type(exc).__name__, "error": str(exc)})
-        if progress and (index == 1 or index % 100 == 0 or index == len(canonical_paths)):
-            print(f"Đã tạo nhãn: {index}/{len(canonical_paths)} workbook duy nhất")
+        if progress and (index == 1 or index % 200 == 0 or index == len(canonical_paths)):
+            print(f"Đã tạo & làm sạch nhãn gốc: {index}/{len(canonical_paths)} workbook duy nhất")
 
     curated_count = _apply_curated_labels(records, curated_labels or [])
     _split_workbooks(records)
+    return records, {
+        "raw_workbook_count": len(files),
+        "unique_workbook_count": len(canonical_paths),
+        "duplicate_workbook_count": len(files) - len(canonical_paths),
+        "curated_label_count": curated_count,
+        "clean_totals": clean_totals,
+        "parse_errors": parse_errors,
+    }
+
+
+def build_dataset(
+    options: BuildOptions | Path,
+    *,
+    curated_labels: list[dict[str, Any]] | None = None,
+    progress: bool = True,
+) -> dict[str, Any]:
+    if isinstance(options, Path):
+        options = BuildOptions(options)
+    module_root = options.module_root.resolve()
+
+    base_records, base_stats = build_base_records(
+        options, curated_labels=curated_labels, progress=progress
+    )
+    parse_errors = list(base_stats["parse_errors"])
+
+    variant_records: list[dict[str, Any]] = []
+    if options.include_raw_variants:
+        variant_records, var_errors = _load_variant_records(module_root, base_records)
+        parse_errors.extend(var_errors)
+        if progress and variant_records:
+            print(f"Đã hợp nhất {len(variant_records)} sheet biến thể thật từ Data/Raw_Variants/")
+
+    records = base_records + variant_records
     _attach_augmentations(records, options)
     records.sort(key=lambda item: (item["source_file"].lower(), item["sheet_index"]))
 
@@ -614,8 +876,6 @@ def build_dataset(
                 if rows_overlap and columns_overlap:
                     overlapping_tables.append(record["sample_id"])
                     break
-    # A family may intentionally be present in Train and Test-ID.  Test-OOD is
-    # the only split that must have no sibling from the same family elsewhere.
     ood_leakage = sorted(
         family for family, splits in family_splits.items()
         if "test_ood" in splits and len(splits) > 1
@@ -657,29 +917,35 @@ def build_dataset(
     jsonl = "".join(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n" for record in records)
     dataset_path = module_root / "Data" / "dataset.jsonl"
     _write_atomic(dataset_path, jsonl)
+
     family_sizes = Counter(record["layout_group"] for record in records)
     split_counts = Counter(record["split"] for record in records)
+    variant_counts = Counter(record.get("variant_type", "original") for record in records)
     method_counts = Counter(record["annotation"]["method"] for record in records)
     warning_counts = Counter(warning for record in records for warning in record["annotation"]["warnings"])
     report = {
         "schema_version": SCHEMA_VERSION,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "dataset_file": "Data/dataset.jsonl",
-        "raw_workbook_count": len(files),
-        "unique_workbook_count": len(canonical_paths),
-        "duplicate_workbook_count": len(files) - len(canonical_paths),
+        "raw_workbook_count": base_stats["raw_workbook_count"],
+        "unique_workbook_count": base_stats["unique_workbook_count"],
+        "duplicate_workbook_count": base_stats["duplicate_workbook_count"],
+        "raw_variant_sheet_count": len(variant_records),
+        "label_cleaning_summary": base_stats["clean_totals"],
         "parse_error_count": len(parse_errors),
         "parse_errors": parse_errors,
         "sheet_sample_count": len(records),
         "table_count": sum(len(record["tables"]) for record in records),
         "no_table_sheet_count": sum(not record["tables"] for record in records),
         "multi_table_sheet_count": sum(len(record["tables"]) > 1 for record in records),
+        "col_mismatch_sheet_count": sum(bool(record.get("col_mismatch_cols")) for record in records),
         "layout_group_count": len(family_sizes),
         "singleton_layout_group_count": sum(size == 1 for size in family_sizes.values()),
         "split_sheet_counts": dict(sorted(split_counts.items())),
+        "variant_type_counts": dict(sorted(variant_counts.items())),
         "annotation_method_counts": dict(sorted(method_counts.items())),
         "annotation_warning_counts": dict(sorted(warning_counts.items())),
-        "curated_label_count": curated_count,
+        "curated_label_count": base_stats["curated_label_count"],
         "augmentation_recipe_count": sum(len(record["augmentation_recipes"]) for record in records),
         "effective_training_sample_count": sum(
             1 + len(record["augmentation_recipes"])
@@ -688,7 +954,7 @@ def build_dataset(
         "validation": validation,
         "dataset_sha256": hashlib.sha256(jsonl.encode("utf-8")).hexdigest(),
         "ready_for_training": not parse_errors and validation["valid"],
-        "important_note": "Annotation ngoài curated case được tạo tự động từ cấu trúc Excel; cần đánh giá Test-ID và Test-OOD trước khi công bố độ chính xác.",
+        "important_note": "Nhãn tập gốc đã được làm sạch biên tự động (cắt chân trang/tiêu đề thừa) và hợp nhất với các biến thể Excel thật trong Data/Raw_Variants/ theo đúng split chống rò rỉ.",
     }
     _write_atomic(
         module_root / "Data" / "dataset_report.json",
@@ -696,113 +962,9 @@ def build_dataset(
     )
     if progress:
         print(
-            f"Hoàn tất: {len(records)} sheet, {report['table_count']} bảng, "
-            f"{report['augmentation_recipe_count']} augmentation recipes."
+            f"Hoàn tất: {len(records)} sheet ({len(base_records)} gốc + {len(variant_records)} biến thể thật), "
+            f"{report['table_count']} bảng, {report['no_table_sheet_count']} sheet không bảng, "
+            f"làm sạch biên={base_stats['clean_totals']}."
         )
     return report
 
-
-def _value_type(value: Any, data_type: str) -> str:
-    if value is None or (isinstance(value, str) and not value.strip()):
-        return "blank"
-    if data_type == "f" or (isinstance(value, str) and value.startswith("=")):
-        return "formula"
-    if isinstance(value, bool):
-        return "boolean"
-    if isinstance(value, datetime):
-        return "datetime"
-    if isinstance(value, date):
-        return "date"
-    if isinstance(value, time):
-        return "time"
-    if isinstance(value, int):
-        return "integer"
-    if isinstance(value, float):
-        return "decimal"
-    return "text"
-
-
-def encode_record(
-    module_root: Path,
-    record: dict[str, Any],
-    augmentation_index: int | None = None,
-) -> tuple[dict[str, Any], list[dict[str, int]]]:
-    """Materialize model features on demand; never include source raw values."""
-    recipe = None if augmentation_index is None else record["augmentation_recipes"][augmentation_index]
-    row_shift = int(recipe.get("row_shift", 0)) if recipe else 0
-    column_shift = int(recipe.get("column_shift", 0)) if recipe else 0
-    style_dropout = float(recipe.get("style_dropout", 0)) if recipe else 0.0
-    header_dropout = float(recipe.get("header_text_dropout", 0)) if recipe else 0.0
-    seed = int(recipe.get("seed", 0)) if recipe else 0
-    workbook = load_workbook(module_root / record["source_file"], read_only=False, data_only=False, keep_links=False)
-    try:
-        worksheet = workbook.worksheets[record["sheet_index"]]
-        rows, columns = record["sheet_shape"]
-        header_cells = {
-            (row, column)
-            for table in record["tables"]
-            for row in range(table["top"], table["header_bottom"] + 1)
-            for column in range(table["left"], table["right"] + 1)
-        }
-        cells: list[dict[str, Any]] = []
-        for row in range(1, rows + 1):
-            row_numbers = [_int_value(_cell_value(worksheet, row, column)) for column in range(1, columns + 1)]
-            numeric_values = [value for value in row_numbers if value is not None]
-            negative_sequence = len(numeric_values) >= 2 and numeric_values == list(
-                range(-1, -len(numeric_values) - 1, -1)
-            )
-            for column in range(1, columns + 1):
-                cell = worksheet.cell(row, column)
-                value = _cell_value(worksheet, row, column)
-                value_type = _value_type(value, getattr(cell, "data_type", "") or "")
-                if value_type == "blank" and not cell.has_style:
-                    continue
-                if value_type == "text":
-                    token = NUMBER_IN_TEXT_RE.sub("<N>", fold_text(value))[:256]
-                else:
-                    token = f"<{value_type.upper()}>"
-                drop_text_score = int(stable_hash([seed, row, column, "text"], 8), 16) / 0xFFFFFFFF
-                if (row, column) in header_cells and drop_text_score < header_dropout:
-                    token = "<MASK>"
-                drop_style_score = int(stable_hash([seed, row, column, "style"], 8), 16) / 0xFFFFFFFF
-                keep_style = drop_style_score >= style_dropout
-                cells.append({
-                    "row": row + row_shift,
-                    "column": column + column_shift,
-                    "token": token,
-                    "value_type": value_type,
-                    "is_negative": bool((_int_value(value) or 0) < 0),
-                    "is_negative_sequence_row": negative_sequence,
-                    "bold": bool(getattr(cell.font, "bold", False)) if keep_style else False,
-                    "centered": getattr(cell.alignment, "horizontal", None) in {"center", "centerContinuous"} if keep_style else False,
-                    "border_count": sum(
-                        bool(getattr(getattr(cell.border, side, None), "style", None))
-                        for side in ("left", "right", "top", "bottom")
-                    ) if keep_style else 0,
-                })
-        merges = []
-        for merged_range in sorted(str(item) for item in worksheet.merged_cells.ranges):
-            left, top, right, bottom = range_boundaries(merged_range)
-            merges.append({
-                "top": top + row_shift,
-                "left": left + column_shift,
-                "bottom": bottom + row_shift,
-                "right": right + column_shift,
-            })
-    finally:
-        workbook.close()
-    shifted_tables = [
-        {
-            "top": table["top"] + row_shift,
-            "left": table["left"] + column_shift,
-            "bottom": table["bottom"] + row_shift,
-            "right": table["right"] + column_shift,
-            "header_bottom": table["header_bottom"] + row_shift,
-        }
-        for table in record["tables"]
-    ]
-    return {
-        "shape": [rows + row_shift, columns + column_shift],
-        "cells": cells,
-        "merges": merges,
-    }, shifted_tables

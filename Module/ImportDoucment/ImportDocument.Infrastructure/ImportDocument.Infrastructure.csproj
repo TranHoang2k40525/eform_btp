@@ -61,7 +61,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\DatabaseConfiguration.cs" />
-    <Compile Include="Configuration\ImportSettings.cs" />
     <Compile Include="ImportDbContext.cs" />
     <Compile Include="Repository\ImportRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

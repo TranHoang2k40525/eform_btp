@@ -1,195 +1,42 @@
-# Cấu trúc dữ liệu huấn luyện và bộ câu lệnh mẫu
+# ĐẶC TẢ CẤU TRÚC BIỂU DIỄN DỮ LIỆU VÀ CHUẨN ĐẦU RA PHÂN CẤP
 
-## 1. Mục đích
+**Đề tài:** Module AI Import file Excel thông minh cho Hệ thống Báo cáo thống kê eForm BTP 
+**Giai đoạn:** Tuần 4
 
-Tài liệu quy định cách mô tả một mẫu huấn luyện, nguyên tắc gán nhãn vùng bảng, cách biểu diễn tiêu đề phân cấp và bộ câu lệnh dùng để hướng dẫn gán nhãn hoặc kiểm định kết quả. Các quy ước thống nhất giúp dữ liệu được tạo bởi nhiều người hoặc nhiều công cụ vẫn có cùng ý nghĩa.
+---
 
-## 2. Đơn vị của bộ dữ liệu
+## 1. Luồng tổng quát từ bảng tính Excel sang cấu trúc dữ liệu chuẩn hóa
 
-Một mẫu tương ứng với một trang tính Excel. Mẫu lưu thông tin tham chiếu đến tệp gốc, kích thước trang tính, danh sách vùng bảng, nhóm bố cục, nguồn nhãn và tập dữ liệu được phân bổ.
+![Quy trình nhận diện và trích xuất bảng](diagrams/01_QUY_TRINH_NHAN_DIEN_VA_TRICH_XUAT.png)
 
-Một trang tính có thể chứa một hoặc nhiều bảng. Các tọa độ sử dụng cách đánh số hàng và cột bắt đầu từ 1, giống cách người dùng nhìn thấy trong Excel.
+Thay vì phụ thuộc vào các bộ quy tắc từ khóa cố định hoặc gửi dữ liệu sang mô hình ngôn ngữ lớn bên ngoài (vốn tồn tại rủi ro bảo mật số liệu nhà nước và chi phí vận hành cao), hệ thống biểu diễn trực tiếp mỗi trang tính Excel thành một lưới hai chiều giàu ngữ nghĩa gồm **60 kênh đặc trưng bất biến theo vị trí**.
 
-## 3. Cấu trúc một mẫu huấn luyện
+---
 
-| Nhóm thông tin | Thành phần | Ý nghĩa |
+## 2. Thiết kế 60 kênh đặc trưng bất biến theo vị trí
+
+Bộ đặc trưng cho từng ô bảng tính được chuẩn hóa trong khoảng giá trị ổn định và **loại bỏ hoàn toàn tọa độ hàng/cột tuyệt đối**, nhằm bảo đảm mô hình nhận diện chính xác dù bảng nằm ở góc trên trái hay bị dịch chuyển xa xuống giữa trang tính:
+
+| Nhóm đặc trưng | Nội dung thông tin trích xuất | Ý nghĩa đối với bài toán |
 |---|---|---|
-| Nhận dạng | Mã mẫu | Phân biệt duy nhất từng trang tính |
-| Nhận dạng | Mã tệp | Gom các trang tính thuộc cùng một tệp |
-| Truy vết | Vị trí tệp nguồn | Cho phép mở lại đúng tệp Excel khi cần |
-| Truy vết | Dấu vân tay số | Phát hiện tệp trùng và kiểm tra tính toàn vẹn |
-| Trang tính | Tên, thứ tự, số hàng và số cột | Mô tả phạm vi dữ liệu có thể sử dụng |
-| Bố cục | Nhóm bố cục | Gom các mẫu có cấu trúc tương tự |
-| Nhãn | Danh sách vùng bảng | Xác định bảng, tiêu đề và vùng giá trị |
-| Chất lượng | Phương pháp gán nhãn, độ tin cậy, cảnh báo | Hỗ trợ kiểm duyệt và truy vết |
-| Phân chia | Tập huấn luyện, xác thực hoặc kiểm tra | Xác định mục đích sử dụng mẫu |
-| Tăng cường | Danh sách phép biến đổi | Tạo biến thể cấu trúc cho tập huấn luyện |
+| **Kiểu nội dung ô** | Ô trống, số nguyên, số thập phân, số lưu dạng chuỗi có dấu phân cách, dấu gạch ngang, ngày tháng, văn bản ngắn/dài. | Phân biệt rõ vùng tiêu đề chữ với vùng số liệu thống kê, kể cả khi số bị định dạng thành chuỗi văn bản. |
+| **Hình học ô gộp** | Ô có thuộc khối gộp hay không, chiều rộng/chiều cao khối gộp, vị trí biên trên/dưới/trái/phải của khối gộp. | Tái tạo cây tiêu đề nhiều tầng và nhận diện các dòng tiêu đề nhóm gộp ngang. |
+| **Định dạng trực quan** | Đường viền 4 cạnh (trên, dưới, trái, phải), chữ đậm, chữ nghiêng, cỡ chữ tương đối, căn lề ngang/dọc, mức độ thụt đầu dòng và tô màu nền. | Giữ độ chính xác cao khi tệp có kẻ khung chuẩn, đồng thời kết hợp nhóm nội dung để vẫn nhận diện tốt khi tệp bị xóa sạch kẻ khung. |
+| **Dấu hiệu mã cột & chỉ mục** | Nhận dạng mẫu mã chỉ số cột trong ngoặc như `(1)`, `(2)`, `A`, `B`, ký hiệu số La Mã, chỉ mục phân cấp `1.1`, `1.2`, dấu gạch đầu dòng. | Định vị chính xác hàng mã cột ngăn cách giữa tiêu đề và vùng số liệu, hỗ trợ phát hiện cột bị đảo thứ tự và phân cấp hàng cha–con. |
+| **Ngữ cảnh lân cận & mật độ hàng/cột** | Tỷ lệ ô có chữ và ô có số trên cùng hàng/cột, khoảng trống ngăn cách xung quanh, sự thay đổi mật độ giữa hàng trước và hàng sau. | Tách dứt khoát phần quốc hiệu/tiêu đề hành chính phía trên, chân trang ký duyệt phía dưới, cột ghi chú bên phải và các bảng phụ đặt song song. |
 
-Thông tin mô tả không cần lưu lại toàn bộ ma trận giá trị của tệp Excel. Khi huấn luyện hoặc kiểm tra trực quan, nội dung cần thiết được đọc từ tệp nguồn.
+---
 
-## 4. Quy tắc gán nhãn vùng bảng
+## 3. Cấu trúc nhãn đa tác vụ và biểu diễn tiêu đề phân cấp
 
-Mỗi bảng có năm ranh giới:
+![Biểu diễn tiêu đề phân cấp](diagrams/03_BIEU_DIEN_TIEU_DE_PHAN_CAP.png)
 
-| Ranh giới | Quy tắc |
-|---|---|
-| Hàng bắt đầu | Hàng đầu tiên thực sự thuộc bảng, không lấy tiêu đề chung của báo cáo |
-| Cột bắt đầu | Cột trái nhất của bảng |
-| Hàng kết thúc | Hàng dữ liệu cuối cùng, không lấy ghi chú hoặc chữ ký |
-| Cột kết thúc | Cột phải nhất của bảng |
-| Hàng cuối tiêu đề | Hàng cuối của tiêu đề nhiều tầng hoặc hàng mã cột |
+Trên cùng một lượt suy luận, mô hình dự đoán đồng thời 5 nhóm đầu ra cấu trúc:
 
-Các điều kiện bắt buộc:
+1. **Nhãn lớp ô (4 lớp):** Ô nền ngoài bảng, ô tiêu đề chữ nhiều tầng, ô thuộc hàng mã cột, và ô thuộc vùng dữ liệu.
+2. **Nhãn vai trò cột (5 lớp):** Ngoài bảng, cột số thứ tự, cột tên chỉ tiêu, cột số liệu thống kê, và cột ghi chú/mở rộng.
+3. **Nhãn cấp độ hàng (9 lớp):** Ngoài bảng, hàng tiêu đề chữ, hàng mã cột, hàng nhóm cấp 1 (La Mã), hàng chỉ tiêu cấp 1, cấp 2, cấp 3, hàng chi tiết/phụ, và hàng tổng cộng.
+4. **Điểm khởi đầu bảng & biên ranh giới:** Cho phép tách nhiều bảng độc lập nằm dọc hoặc nằm ngang trên cùng một trang tính.
+5. **Tín hiệu đảo thứ tự cột:** Cảnh báo khi chuỗi mã số cột không tăng dần theo thứ tự chuẩn của biểu mẫu.
 
-- hàng bắt đầu không được nằm sau hàng cuối tiêu đề;
-- hàng cuối tiêu đề không được nằm sau hàng kết thúc;
-- cột bắt đầu không được nằm sau cột kết thúc;
-- mọi tọa độ phải nằm trong kích thước trang tính;
-- hai bảng độc lập không được gán thành một vùng chung;
-- ghi chú và vùng ký xác nhận phải nằm ngoài bảng.
-
-## 5. Chuyển nhãn vùng thành ba lớp ô
-
-| Vị trí ô | Lớp gán cho mô hình |
-|---|---|
-| Nằm ngoài tất cả các vùng bảng | Ngoài bảng |
-| Từ hàng bắt đầu đến hàng cuối tiêu đề, trong chiều rộng bảng | Tiêu đề |
-| Sau hàng cuối tiêu đề đến hàng kết thúc, trong chiều rộng bảng | Giá trị |
-
-Nhờ cách biểu diễn này, mô hình vừa học được ranh giới bảng vừa học được điểm chuyển tiếp giữa tiêu đề và số liệu.
-
-## 6. Nguồn nhãn và mức độ tin cậy
-
-Nhãn có thể được tạo từ các dấu hiệu cấu trúc và sau đó được con người kiểm duyệt.
-
-| Nguồn nhãn | Diễn giải |
-|---|---|
-| Hàng mã cột chuẩn | Bảng có hàng mã dạng `(1)`, `(2)`, ký tự hoặc mẫu tương tự |
-| Chuỗi mã số | Bảng có hàng mã số tăng/giảm đều theo cột |
-| Chuyển tiếp chữ – số | Suy luận vị trí khi hàng tiêu đề chủ yếu là chữ và hàng tiếp theo chủ yếu là số |
-| Đối chiếu thủ công | Người kiểm duyệt xác nhận trực tiếp ranh giới với tệp Excel và kết quả mong đợi |
-
-Độ tin cậy của nhãn chỉ phản ánh mức chắc chắn của quá trình gán nhãn. Nó không thay thế bước kiểm tra thủ công đối với tập đánh giá chính thức.
-
-## 7. Tăng cường dữ liệu
-
-### 7.1. Mục tiêu
-
-Tăng cường dữ liệu tạo các biến thể hợp lý của bố cục để mô hình không ghi nhớ vị trí hoặc định dạng của một vài biểu mẫu.
-
-### 7.2. Các phép biến đổi
-
-| Phép biến đổi | Tác dụng |
-|---|---|
-| Dịch hàng | Mô phỏng bảng bắt đầu thấp hơn trong trang tính |
-| Dịch cột | Mô phỏng bảng bắt đầu lệch sang phải |
-| Giảm tín hiệu định dạng | Giúp mô hình không phụ thuộc hoàn toàn vào chữ đậm, căn giữa hoặc đường viền |
-| Che một phần chữ tiêu đề | Khuyến khích mô hình dùng đồng thời bố cục, kiểu dữ liệu và ô gộp |
-
-Mọi phép dịch chuyển phải áp dụng đồng thời cho dữ liệu biểu diễn, vùng ô gộp và nhãn. Tăng cường không được tạo số liệu nghiệp vụ giả.
-
-## 8. Chia tập và ngăn rò rỉ dữ liệu
-
-Việc chia tập phải thực hiện theo tệp, không chia ngẫu nhiên từng hàng hoặc từng ô. Nếu cùng một tệp xuất hiện ở cả tập huấn luyện và tập kiểm tra, kết quả đánh giá sẽ cao hơn thực tế.
-
-Tập kiểm tra khác miền phải gồm những nhóm bố cục không xuất hiện trong quá trình huấn luyện. Điều này cho biết mô hình có thể xử lý cấu trúc mới đến mức nào.
-
-## 9. Biểu diễn đầu ra cho từng cột
-
-Sau khi vùng bảng được xác định, mỗi cột được mô tả bằng:
-
-| Thành phần | Ví dụ | Ý nghĩa |
-|---|---|---|
-| Vị trí cột | Cột C | Vị trí vật lý trong Excel |
-| Đường dẫn tiêu đề | Kết quả thực hiện → Kinh phí | Quan hệ từ tiêu đề cha đến tiêu đề con |
-| Nhãn hiển thị | Kinh phí | Nhãn chi tiết nhất của cột |
-| Mã cột | `(3)` | Mã thứ tự nếu bảng có hàng mã |
-
-Đây là ánh xạ cấu trúc cơ bản giúp giao diện biết mỗi giá trị thuộc nhánh tiêu đề nào. Việc ghép với chỉ tiêu nghiệp vụ của biểu đích được thực hiện ở giai đoạn sau.
-
-## 10. Vai trò của bộ câu lệnh
-
-Mô hình huấn luyện chính sử dụng lưới đặc trưng và nhãn ô, không phụ thuộc vào một dịch vụ mô hình ngôn ngữ khi vận hành. Bộ câu lệnh trong tài liệu có ba vai trò:
-
-1. Thống nhất hướng dẫn cho người gán nhãn.
-2. Hỗ trợ một công cụ AI kiểm tra nhãn nếu được sử dụng trong tương lai.
-3. Làm hợp đồng mô tả đầu vào, quy tắc và đầu ra mong đợi.
-
-## 11. Câu lệnh mẫu 1 — xác định vùng bảng
-
-```text
-VAI TRÒ
-Bạn là chuyên viên kiểm định cấu trúc bảng thống kê trong Excel.
-
-NHIỆM VỤ
-Xác định tất cả các bảng cần hiển thị trên trang tính. Với mỗi bảng,
-hãy chỉ ra hàng bắt đầu, cột bắt đầu, hàng kết thúc, cột kết thúc
-và hàng cuối cùng thuộc phần tiêu đề.
-
-QUY TẮC
-1. Phần tiêu đề gồm toàn bộ các tầng tiêu đề và hàng mã cột nếu có.
-2. Phần giá trị chỉ gồm các hàng dữ liệu thực tế.
-3. Không đưa tiêu đề chung của báo cáo, ghi chú hoặc chữ ký vào bảng.
-4. Nếu có nhiều bảng độc lập, phải trả từng bảng riêng.
-5. Không suy diễn hoặc sửa nội dung ô.
-6. Nếu không có bảng, trả danh sách rỗng và nêu lý do.
-
-KẾT QUẢ
-Trả danh sách vùng bảng và các cảnh báo cần người kiểm duyệt xem lại.
-```
-
-## 12. Câu lệnh mẫu 2 — kiểm tra tiêu đề phân cấp
-
-```text
-VAI TRÒ
-Bạn là chuyên viên kiểm tra tiêu đề nhiều tầng của bảng thống kê.
-
-ĐẦU VÀO
-Phạm vi bảng, hàng cuối tiêu đề, nội dung các ô tiêu đề
-và danh sách các ô gộp.
-
-NHIỆM VỤ
-1. Kiểm tra các hàng được gán là tiêu đề có đầy đủ hay không.
-2. Xác định tiêu đề cha bao phủ những cột con nào dựa trên ô gộp.
-3. Tạo đường dẫn tiêu đề từ trên xuống cho từng cột.
-4. Tách mã cột nếu có một hàng mã thống nhất.
-5. Không ánh xạ sang biểu đích và không thay đổi số liệu.
-
-KẾT QUẢ
-Trả trạng thái hợp lệ, danh sách cột, đường dẫn tiêu đề
-và các vấn đề cần sửa.
-```
-
-## 13. Câu lệnh mẫu 3 — kiểm định nhãn
-
-```text
-So sánh nhãn vùng bảng với trang tính gốc.
-
-Kiểm tra lần lượt:
-- hàng hoặc cột bắt đầu có bị thiếu hay thừa;
-- hàng hoặc cột kết thúc có bị thiếu hay thừa;
-- ranh giới tiêu đề có chính xác;
-- có bỏ sót bảng hoặc tạo thừa bảng;
-- có lấy nhầm ghi chú, dòng trống hoặc chữ ký;
-- trang tính có thực sự không chứa bảng hay không.
-
-Trả kết luận chấp nhận hoặc không chấp nhận, vùng đã hiệu chỉnh
-và danh sách lỗi cụ thể. Không tự chấp nhận nếu chưa quan sát đủ trang tính.
-```
-
-## 14. Tiêu chí chấp nhận bộ dữ liệu
-
-- Các mẫu đọc được và có mã định danh duy nhất.
-- Mọi tệp nguồn có thể truy vết và kiểm tra tính toàn vẹn.
-- Tọa độ bảng hợp lệ, không vượt trang tính và không chồng lấn.
-- Không có tệp nào xuất hiện ở nhiều tập đánh giá khác nhau.
-- Tập kiểm tra khác miền không chia sẻ nhóm bố cục với tập huấn luyện.
-- Tăng cường chỉ áp dụng cho tập huấn luyện.
-- Có mẫu trang tính không chứa bảng để đo trường hợp nhận diện nhầm.
-- Tập đánh giá có nhãn được con người xác nhận và đủ đại diện.
-- Có mẫu chứa nhiều bảng, tiêu đề sâu, ghi chú sát bảng và bố cục hiếm.
-
-## 15. Kết luận
-
-Cấu trúc dữ liệu được thiết kế gọn nhưng đủ để huấn luyện bài toán nhận diện vùng bảng. Bộ câu lệnh giúp thống nhất cách hiểu giữa người làm dữ liệu, công cụ hỗ trợ và người kiểm định. Quan hệ tiêu đề cha – con được bảo toàn dưới dạng đường dẫn cột, tạo đầu ra rõ ràng cho bước xem trước và xử lý nghiệp vụ tiếp theo.
-
+Kết quả sau hậu xử lý thuần cấu trúc được đóng gói thành cấu trúc JSON chuẩn hóa phiên bản 2.0, bao gồm: danh sách các trang tính hợp lệ, tọa độ vùng bảng theo chuẩn bảng tính, mảng ô gộp tiêu đề đầy đủ, cây đường dẫn tiêu đề cha–con cho từng cột, danh sách dòng số liệu giữ nguyên kiểu giá trị, độ tin cậy tổng hợp và danh sách cảnh báo cấu trúc để giao diện eForm hiển thị cho người dùng rà soát.
